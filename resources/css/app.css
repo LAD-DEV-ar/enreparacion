@@ -46,3 +46,7 @@
    --color-danger: #ef4444;
    --color-info: #0081cc;
 }
+
+[x-cloak] {
+    display: none !important;
+}

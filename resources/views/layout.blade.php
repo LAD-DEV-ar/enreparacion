@@ -14,5 +14,6 @@
     </head>
     <body class="bg-background text-text-primary">
         @yield('main')
+        <x-toast />
     </body>
 </html>
