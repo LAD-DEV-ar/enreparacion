@@ -1,7 +1,21 @@
 <?php
 
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+Route::get('/', function () {
+    return redirect()->route('login');
+});
+
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index')->middleware('auth');
 Route::post('/dashboard', [DashboardController::class, 'store'])->name('dashboard.store');
+
+Route::get('/auth/login', [LoginController::class, 'index'])->name('login');
+Route::post('/auth/login', [LoginController::class, 'store'])->name('login.store');
+
+Route::get('/auth/register', [RegisterController::class, 'index'])->name('register.index');
+Route::post('/auth/register', [RegisterController::class, 'store'])->name('register.store');
+
+Route::post('/auth/logout', [LoginController::class, 'logout'])->name('login.logout');

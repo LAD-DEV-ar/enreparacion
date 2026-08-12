@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('negocio_id')->nullable()->constrained('negocio');
+            $table->foreignId('negocios_id')->nullable()->constrained('negocios');
         });
     }
 
@@ -22,8 +22,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['negocio_id']); // Elimina la relación foránea
-            $table->dropColumn('negocio_id');    // Elimina la columna
+            $table->dropForeign(['negocios_id']); // Elimina la relación foránea
+            $table->dropColumn('negocios_id');    // Elimina la columna
         });
     }
 };
