@@ -17,11 +17,11 @@ return new class extends Migration
             $table->foreignId('dispositivos_id')->constrained('dispositivos');
             $table->foreignId('users_id')->constrained('users');
             $table->string('falla_reportada');
-            $table->string('patron_desbloqueo');
-            $table->string('estado');
-            $table->unsignedBigInteger('costo_estimado');
-            $table->unsignedBigInteger('sena');
-            $table->string('notas_internas');
+            $table->string('clave_de_acceso')->nullable();
+            $table->string('estado')->default('recibido');
+            $table->unsignedBigInteger('costo_estimado')->nullable();
+            $table->unsignedBigInteger('sena')->nullable();
+            $table->string('notas_internas')->nullable();
             $table->timestamps();
         });
     }

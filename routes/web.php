@@ -3,13 +3,14 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Negocios\NegocioController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index')->middleware('auth');
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index')->middleware(['auth', 'negocios_id']);
 Route::post('/dashboard', [DashboardController::class, 'store'])->name('dashboard.store');
 
 Route::get('/auth/login', [LoginController::class, 'index'])->name('login');
@@ -19,3 +20,5 @@ Route::get('/auth/register', [RegisterController::class, 'index'])->name('regist
 Route::post('/auth/register', [RegisterController::class, 'store'])->name('register.store');
 
 Route::post('/auth/logout', [LoginController::class, 'logout'])->name('login.logout');
+
+Route::get('/tu-negocio', [NegocioController::class, 'index'])->name('negocios')->middleware('auth');

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('clientes_id')->constrained('clientes');
             $table->string('marca_y_modelo');
-            $table->string('imei_o_serie');
+            $table->string('imei_o_serie')->nullable();
             $table->timestamps();
         });
     }
