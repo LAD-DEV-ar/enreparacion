@@ -18,6 +18,7 @@ class DashboardController extends Controller
 
     public function store(Request $request)
     {
+
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:255'],
             'telefono' => ['required', 'string', 'max:255'],
@@ -27,7 +28,7 @@ class DashboardController extends Controller
             'marca_y_modelo' => ['required', 'string', 'max:255'],
             'clave_de_acceso' => ['nullable', 'string', 'max:255'],
             'imei_o_serie' => ['nullable', 'string', 'max:255'],
-            'valor' => ['nullable', 'numeric'],
+            'costo_estimado' => ['nullable', 'numeric'],
         ], [
             'nombre.required' => 'El nombre del cliente es obligatorio.',
             'telefono.required' => 'El teléfono es obligatorio.',
@@ -35,7 +36,7 @@ class DashboardController extends Controller
             'marca_y_modelo.required' => 'La marca y modelo son obligatorios.',
             'email.email' => 'El correo electrónico no es válido.',
             'sena.numeric' => 'La seña debe ser un valor numérico.',
-            'valor.numeric' => 'El valor debe ser un valor numérico.',
+            'costo_estimado.numeric' => 'El valor debe ser un valor numérico.',
         ]);
 
         $userId = Auth::id();
@@ -61,10 +62,10 @@ class DashboardController extends Controller
             'users_id' => $user->id, // Solo prueba
             'falla_reportada' => $validated['falla_reportada'],
             'clave_de_acceso' => $validated['clave_de_acceso'],
-            'estado' => $validated['estado'],
-            'costo_estimado' => $validated['estado'],
+            // 'estado' => $validated['estado'],
+            'costo_estimado' => $validated['costo_estimado'],
             'sena' => $validated['sena'],
-            'notas_internas' => $validated['notas_internas'],
+            // 'notas_internas' => $validated['notas_internas'],
         ]);
 
         return redirect()->route('dashboard.index')->with('success', 'Reparación registrada correctamente.');

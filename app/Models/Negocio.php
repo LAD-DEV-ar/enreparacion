@@ -6,5 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Negocio extends Model
 {
-    //
+    public $fillable = [
+        'nombre',
+        'direccion',
+        'telefono'
+    ];
 }

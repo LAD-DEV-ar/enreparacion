@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class CheckIfHaveNegociosId
+class IfHaveNegociosIdSendToDashboard
 {
     /**
      * Handle an incoming request.
@@ -16,11 +16,9 @@ class CheckIfHaveNegociosId
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-
-        if (!$user->negocios_id){
-            return redirect()->route('negocios');
+        if (!empty($user->negocios_id)){
+            return redirect()->route('dashboard.index');
         }
-            
         return $next($request);
     }
 }

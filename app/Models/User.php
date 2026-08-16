@@ -11,6 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use App\Models\EmailVerificationCode;
 
 /**
  * @property int $id
@@ -34,6 +35,12 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+
+    public function emailVerificationCodes()
+    {
+        return $this->hasMany(EmailVerificationCode::class, 'users_id');
+    }
+
     protected function casts(): array
     {
         return [

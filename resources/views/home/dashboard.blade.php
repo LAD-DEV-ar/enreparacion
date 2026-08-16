@@ -355,7 +355,6 @@
                                         name="clave_de_acceso"
                                         class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 pr-10 text-sm font-semibold text-white outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner appearance-none cursor-pointer"
                                     >
-                                        <option value="" disabled {{ old('clave_de_acceso') ? '' : 'selected' }}>Clave de acceso</option>
                                         <option value="Sin clave" {{ old('clave_de_acceso') == 'Sin clave' ? 'selected' : '' }}>Sin clave</option>
                                         <option value="PIN / Contraseña" {{ old('clave_de_acceso') == 'PIN / Contraseña' ? 'selected' : '' }}>PIN / Contraseña</option>
                                         <option value="Patrón de desbloqueo" {{ old('clave_de_acceso') == 'Patrón de desbloqueo' ? 'selected' : '' }}>Patrón de desbloqueo</option>
@@ -389,7 +388,7 @@
                                 @enderror
                             </div>
 
-                            {{-- Valor --}}
+                            {{-- Costo Estimado --}}
                             <div>
                                 <label class="block text-sm sm:text-base font-bold text-white mb-1">
                                     Valor:
@@ -397,12 +396,12 @@
                                 <input
                                     type="number"
                                     step="any"
-                                    name="valor"
-                                    value="{{ old('valor') }}"
+                                    name="costo_estimado"
+                                    value="{{ old('costo_estimado') }}"
                                     placeholder="$$$"
                                     class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
                                 >
-                                @error('valor')
+                                @error('costo_estimado')
                                     <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
                                 @enderror
                             </div>

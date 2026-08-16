@@ -13,7 +13,7 @@ class Reparacion extends Model
         'dispositivos_id',
         'users_id',
         'falla_reportada',
-        'patron_desbloqueo',
+        'clave_de_acceso',
         'estado',
         'costo_estimado',
         'sena',

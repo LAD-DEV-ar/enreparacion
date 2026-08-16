@@ -34,7 +34,7 @@
                 Registra tu Negocio
             </h2>
 
-            <form method="POST" action="#" class="space-y-5">
+            <form method="POST" action="{{ route('negocios.store') }}" class="space-y-5">
                 @csrf
 
                 {{-- Campo: Tu Negocio --}}

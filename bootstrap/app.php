@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckIfHaveNegociosId;
+use App\Http\Middleware\IfHaveNegociosIdSendToDashboard;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,7 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'negocios_id' => CheckIfHaveNegociosId::class
+            'negocios_id' => CheckIfHaveNegociosId::class,
+            'have_negocios_id' => IfHaveNegociosIdSendToDashboard::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
