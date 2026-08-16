@@ -14,6 +14,12 @@ class NegocioController extends Controller
     }
     public function store(Request $request){
 
+        $user = auth()->user();
+
+        if(!empty($user->negocios_id)){
+            return redirect()->route('dashboard.index')->with('info', 'Ya tienes un negocio vinculado a tu cuenta');
+        }
+
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:255'],
             'direccion' => ['required', 'string', 'max:255'],
@@ -30,7 +36,6 @@ class NegocioController extends Controller
             'telefono' => $validated['telefono']
         ]);
 
-        $user = auth()->user();
         $user->negocios_id = $negocio->id;
         $user->save();
 

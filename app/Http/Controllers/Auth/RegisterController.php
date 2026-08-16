@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\VerifyEmailCode;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 
 class RegisterController extends Controller
 {
@@ -31,7 +33,6 @@ class RegisterController extends Controller
             'password.min' => 'La contraseña debe tener al menos 6 caracteres.',
         ]);
 
-
         $user = DB::transaction(function () use ($validated) {
             $user = User::create([
                 'name' => $validated['name'],
@@ -46,12 +47,14 @@ class RegisterController extends Controller
                 'expires_at' => now()->addMinutes(10),
             ]);
 
+            Mail::to($user->email)->send(new VerifyEmailCode($code, $user));
+
             return $user;
         });
 
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('dashboard.index')->with('success', '¡Cuenta creada con éxito! Bienvenido a EnReparacion.');
+        return redirect()->route('verificar-email.index')->with('success', '¡Cuenta creada con éxito! Te enviamos un código a tu correo.');
     }
 }

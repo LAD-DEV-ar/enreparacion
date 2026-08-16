@@ -126,9 +126,20 @@
                         type="submit"
                         class="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-primary hover:bg-primary-hover active:scale-[0.99] text-white font-bold text-base sm:text-lg shadow-lg hover:shadow-cyan-500/20 transition-all duration-200 cursor-pointer flex items-center justify-center"
                     >
-                        Registra Negocio
+                        Verificar
                     </button>
                 </div>
+            </form>
+
+            {{-- Formulario para Reenviar Código --}}
+            <form method="POST" action="{{ route('verificar-email.resend') }}" class="mt-5 text-center">
+                @csrf
+                <p class="text-xs sm:text-sm text-text-secondary">
+                    ¿No recibiste el código?
+                    <button type="submit" class="text-primary hover:text-primary-hover font-semibold hover:underline transition-colors cursor-pointer ml-1">
+                        Reenviar código
+                    </button>
+                </p>
             </form>
 
         </div>

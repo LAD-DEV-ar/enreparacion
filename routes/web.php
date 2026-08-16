@@ -25,5 +25,6 @@ Route::post('/auth/logout', [LoginController::class, 'logout'])->name('login.log
 Route::get('/tu-negocio', [NegocioController::class, 'index'])->name('negocios')->middleware(['auth', 'have_negocios_id']);
 Route::post('/tu-negocio', [NegocioController::class, 'store'])->name('negocios.store');
 
-Route::get('/verificar-email', [VerificarEmailController::class, 'index'])->name('verificar-email.index');
-Route::post('/verificar-email', [VerificarEmailController::class, 'store']);
+Route::get('/verificar-email', [VerificarEmailController::class, 'index'])->name('verificar-email.index')->middleware('auth');
+Route::post('/verificar-email', [VerificarEmailController::class, 'store'])->name('verificar-email.store');
+Route::post('/verificar-email/reenviar', [VerificarEmailController::class, 'resend'])->name('verificar-email.resend');

@@ -8,6 +8,7 @@ use App\Models\Reparacion;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -39,34 +40,39 @@ class DashboardController extends Controller
             'costo_estimado.numeric' => 'El valor debe ser un valor numérico.',
         ]);
 
-        $userId = Auth::id();
-        $user = User::find($userId);
-        
 
-        $cliente = Cliente::create([
-            'negocios_id' => $user->negocios_id, // Solo prueba 
-            'nombre' => $validated['nombre'],
-            'telefono' => $validated['telefono'],
-            'email' => $validated['email']
-        ]);
+        DB::transaction(function () use ($validated){
 
-        $dispositivo = Dispositivo::create([
-            'clientes_id' => $cliente->id,
-            'marca_y_modelo' => $validated['marca_y_modelo'],
-            'imei_o_serie' => $validated['imei_o_serie'],
-        ]);
+            $userId = Auth::id();
+            $user = User::find($userId);
 
-        Reparacion::create([
-            'negocios_id' => $user->negocios_id, // Solo prueba
-            'dispositivos_id' => $dispositivo->id, // Solo prueba
-            'users_id' => $user->id, // Solo prueba
-            'falla_reportada' => $validated['falla_reportada'],
-            'clave_de_acceso' => $validated['clave_de_acceso'],
-            // 'estado' => $validated['estado'],
-            'costo_estimado' => $validated['costo_estimado'],
-            'sena' => $validated['sena'],
-            // 'notas_internas' => $validated['notas_internas'],
-        ]);
+            $cliente = Cliente::create([
+                'negocios_id' => $user->negocios_id, // Solo prueba 
+                'nombre' => $validated['nombre'],
+                'telefono' => $validated['telefono'],
+                'email' => $validated['email']
+            ]);
+
+            $dispositivo = Dispositivo::create([
+                'clientes_id' => $cliente->id,
+                'marca_y_modelo' => $validated['marca_y_modelo'],
+                'imei_o_serie' => $validated['imei_o_serie'],
+            ]);
+
+            Reparacion::create([
+                'negocios_id' => $user->negocios_id, // Solo prueba
+                'dispositivos_id' => $dispositivo->id, // Solo prueba
+                'users_id' => $user->id, // Solo prueba
+                'falla_reportada' => $validated['falla_reportada'],
+                'clave_de_acceso' => $validated['clave_de_acceso'],
+                // 'estado' => $validated['estado'],
+                'costo_estimado' => $validated['costo_estimado'],
+                'sena' => $validated['sena'],
+                // 'notas_internas' => $validated['notas_internas'],
+            ]);
+
+        });
+
 
         return redirect()->route('dashboard.index')->with('success', 'Reparación registrada correctamente.');
     }
