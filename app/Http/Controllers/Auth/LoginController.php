@@ -10,6 +10,9 @@ class LoginController extends Controller
 {
     public function index()
     {
+        if (!auth()->guest()){
+            return redirect()->route('dashboard.index')->with('info', 'Ya estabas logeado!');
+        }
         return view('auth.login');
     }
 

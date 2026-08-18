@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('email_verification_codes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('users_id')->constrained();
-            $table->string('code');
-            $table->timestamp('expires_at');
-            $table->timestamps();
+        Schema::table('reparaciones', function (Blueprint $table) {
+            $table->string('codigo_seguimiento', 10)->unique();
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('email_verification_codes');
+        Schema::table('reparaciones', function (Blueprint $table) {
+            $table->dropColumn('codigo_seguimiento');
+        });
     }
 };

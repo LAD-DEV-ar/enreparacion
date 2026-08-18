@@ -3,7 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerificarEmailController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Negocios\NegocioController;
 use Illuminate\Support\Facades\Route;
 

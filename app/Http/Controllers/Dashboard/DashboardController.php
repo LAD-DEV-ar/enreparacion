@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Dashboard;
 
+use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Models\Dispositivo;
 use App\Models\Reparacion;
@@ -9,12 +10,18 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Traits\GeneraCodigoReparacion;
 
 class DashboardController extends Controller
 {
+    use GeneraCodigoReparacion;
+    
     public function index()
     {
-        return view('home.dashboard');
+        $user = auth()->user();
+        $reparaciones = $user->reparaciones;
+        //dd($reparaciones);
+        return view('home.dashboard', compact('reparaciones'));
     }
 
     public function store(Request $request)
@@ -59,6 +66,8 @@ class DashboardController extends Controller
                 'imei_o_serie' => $validated['imei_o_serie'],
             ]);
 
+            $codigo_seguimiento = $this->generarCodigoSeguimiento($validated['nombre']);
+
             Reparacion::create([
                 'negocios_id' => $user->negocios_id, // Solo prueba
                 'dispositivos_id' => $dispositivo->id, // Solo prueba
@@ -69,6 +78,7 @@ class DashboardController extends Controller
                 'costo_estimado' => $validated['costo_estimado'],
                 'sena' => $validated['sena'],
                 // 'notas_internas' => $validated['notas_internas'],
+                'codigo_seguimiento' => $codigo_seguimiento
             ]);
 
         });

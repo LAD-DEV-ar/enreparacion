@@ -79,17 +79,25 @@
                         class="flex flex-1 flex-col items-center justify-center"
                     >
 
-                        <span
-                            class="text-8xl font-medium leading-none text-text-disabled"
-                        >
-                            0
-                        </span>
+                        @if (!$reparaciones)
+                            <span
+                                class="text-8xl font-medium leading-none text-text-disabled"
+                            >
+                                0
+                            </span>
 
-                        <span
-                            class="mt-2 text-3xl text-text-disabled"
-                        >
-                            Recibidos
+                            <span
+                                class="mt-2 text-3xl text-text-disabled"
+                            >
+                                Recibidos
+                            </span>
+                        @else
+                        <span>
+                            @foreach ($reparaciones as $reparacion )
+                            {{  $reparacion->id }}
+                            @endforeach
                         </span>
+                        @endif
 
                     </div>
 
@@ -350,25 +358,30 @@
                                 <label class="block text-sm sm:text-base font-bold text-white mb-1">
                                     Clave de acceso:
                                 </label>
-                                <div class="relative">
-                                    <select
-                                        name="clave_de_acceso"
-                                        class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 pr-10 text-sm font-semibold text-white outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner appearance-none cursor-pointer"
-                                    >
-                                        <option value="Sin clave" {{ old('clave_de_acceso') == 'Sin clave' ? 'selected' : '' }}>Sin clave</option>
-                                        <option value="PIN / Contraseña" {{ old('clave_de_acceso') == 'PIN / Contraseña' ? 'selected' : '' }}>PIN / Contraseña</option>
-                                        <option value="Patrón de desbloqueo" {{ old('clave_de_acceso') == 'Patrón de desbloqueo' ? 'selected' : '' }}>Patrón de desbloqueo</option>
-                                        <option value="Huella / Face ID" {{ old('clave_de_acceso') == 'Huella / Face ID' ? 'selected' : '' }}>Huella / Face ID</option>
-                                    </select>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-200">
-                                        <svg class="h-4 w-4 fill-current" viewBox="0 0 20 20">
-                                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
-                                        </svg>
+                                <div class="flex gap-2">
+                                    <div class="relative w-2/3">
+                                        <select
+                                            name="clave_de_acceso"
+                                            class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 pr-10 text-sm font-semibold text-white outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner appearance-none cursor-pointer"
+                                        >
+                                            <option value="Sin clave" {{ old('clave_de_acceso') == 'Sin clave' ? 'selected' : '' }}>Sin clave</option>
+                                            <option value="PIN / Contraseña" {{ old('clave_de_acceso') == 'PIN / Contraseña' ? 'selected' : '' }}>PIN / Contraseña</option>
+                                            <option value="Patrón de desbloqueo" {{ old('clave_de_acceso') == 'Patrón de desbloqueo' ? 'selected' : '' }}>Patrón de desbloqueo</option>
+                                            <option value="Huella / Face ID" {{ old('clave_de_acceso') == 'Huella / Face ID' ? 'selected' : '' }}>Huella / Face ID</option>
+                                        </select>
+                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-200">
+                                            <svg class="h-4 w-4 fill-current" viewBox="0 0 20 20">
+                                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                            </svg>
+                                        </div>
                                     </div>
+                                    @error('clave_de_acceso')
+                                        <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
+                                    @enderror
+                                    <button class="w-1/3 h-10 sm:h-11 rounded-xl bg-[#6f7b8c] px-4 text-sm font-semibold text-white outline-none border border-transparent cursor-pointer flex items-center justify-center"> 
+                                        Guardar
+                                    </button>
                                 </div>
-                                @error('clave_de_acceso')
-                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                                @enderror
                             </div>
 
                             {{-- IMEI / Nº Serie --}}

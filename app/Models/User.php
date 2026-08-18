@@ -41,6 +41,13 @@ class User extends Authenticatable
         return $this->hasMany(EmailVerificationCode::class, 'users_id');
     }
 
+    public function reparaciones(){
+        return $this->hasMany(Reparacion::class, 'users_id');
+    }
+    public function negocio(){
+        return $this->belongsTo(Negocio::class);
+    }
+
     protected function casts(): array
     {
         return [
