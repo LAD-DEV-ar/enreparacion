@@ -19,9 +19,47 @@ class DashboardController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $reparaciones = $user->reparaciones;
-        //dd($reparaciones);
-        return view('home.dashboard', compact('reparaciones'));
+
+        // Obtenemos las reparaciones del negocio con todas sus relaciones cargadas eficientemente (Eager Loading)
+        $reparaciones = Reparacion::with([
+            'dispositivo.cliente',
+            'usuario',
+            'negocio'
+        ])
+        ->where('negocios_id', $user->negocios_id)
+        ->latest()
+        ->get();
+
+        // Filtramos las reparaciones según su estado para cada columna del tablero
+        $reparacionesRecibidas = $reparaciones->filter(function ($reparacion) {
+            return strtolower($reparacion->estado ?? '') === 'recibido';
+        });
+
+        $reparacionesEnProceso = $reparaciones->filter(function ($reparacion) {
+            return in_array(strtolower($reparacion->estado ?? ''), [
+                'en_reparacion',
+                'en reparación',
+                'en reparacion',
+                'en_proceso',
+                'en proceso'
+            ]);
+        });
+
+        $reparacionesListas = $reparaciones->filter(function ($reparacion) {
+            return in_array(strtolower($reparacion->estado ?? ''), [
+                'listo',
+                'listos',
+                'finalizado',
+                'terminado'
+            ]);
+        });
+
+        return view('home.dashboard', compact(
+            'reparaciones',
+            'reparacionesRecibidas',
+            'reparacionesEnProceso',
+            'reparacionesListas'
+        ));
     }
 
     public function store(Request $request)

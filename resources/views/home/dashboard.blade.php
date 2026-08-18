@@ -1,7 +1,16 @@
 @extends('layout')
 
 @section('main')
-    <main class="ml-56 min-h-screen" x-data="{ openModal: {{ $errors->any() ? 'true' : 'false' }} }">
+    <main class="ml-56 min-h-screen" x-data="{
+        openModal: {{ $errors->any() ? 'true' : 'false' }},
+        openDetailModal: false,
+        search: '',
+        selectedReparacion: null,
+        verDetalle(item) {
+            this.selectedReparacion = item;
+            this.openDetailModal = true;
+        }
+    }">
         @include('components.sidebar')
         <div class="px-12 py-10">
 
@@ -35,6 +44,7 @@
 
                     <input
                         type="search"
+                        x-model="search"
                         placeholder="Buscar cliente o dispositivo..."
                         class="h-16 w-full rounded-full border-0 bg-surface-hover pl-20 pr-6 text-base font-semibold text-text-primary placeholder:text-text-disabled outline-none focus:ring-2 focus:ring-primary"
                     >
@@ -67,19 +77,23 @@
                 ====================================== --}}
 
                 <div
-                    class="flex h-[516px] flex-col rounded-[30px] border-4 border-border bg-background p-7"
+                    class="flex h-[560px] flex-col rounded-[30px] border-4 border-border bg-background p-6"
                 >
 
-                    <h2 class="font-bold">
-                        Recibidos
-                    </h2>
+                    <div class="flex items-center justify-between pb-3">
+                        <h2 class="text-xl font-bold text-white tracking-wide">
+                            Recibidos
+                        </h2>
+                        <span class="flex h-7 min-w-7 items-center justify-center rounded-full bg-surface-hover px-2.5 text-xs font-bold text-text-secondary border border-border/40">
+                            {{ $reparacionesRecibidas->count() }}
+                        </span>
+                    </div>
 
 
-                    <div
-                        class="flex flex-1 flex-col items-center justify-center"
-                    >
-
-                        @if (!$reparaciones)
+                    @if ($reparacionesRecibidas->isEmpty())
+                        <div
+                            class="flex flex-1 flex-col items-center justify-center"
+                        >
                             <span
                                 class="text-8xl font-medium leading-none text-text-disabled"
                             >
@@ -91,15 +105,86 @@
                             >
                                 Recibidos
                             </span>
-                        @else
-                        <span>
-                            @foreach ($reparaciones as $reparacion )
-                            {{  $reparacion->id }}
-                            @endforeach
-                        </span>
-                        @endif
+                        </div>
+                    @else
+                        <div class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1">
+                            @foreach ($reparacionesRecibidas as $reparacion)
+                                @php
+                                    $clienteNombre = $reparacion->dispositivo?->cliente?->nombre ?? 'Cliente';
+                                    $marcaModelo = $reparacion->dispositivo?->marca_y_modelo ?? 'Dispositivo';
+                                    $codigo = $reparacion->codigo_seguimiento ? ('#' . $reparacion->codigo_seguimiento) : ('#' . $reparacion->id);
+                                    $searchTarget = strtolower($clienteNombre . ' ' . $marcaModelo . ' ' . $reparacion->falla_reportada . ' ' . $codigo . ' ' . $reparacion->id);
+                                @endphp
+                                <div
+                                    x-show="!search || '{{ addslashes($searchTarget) }}'.includes(search.toLowerCase())"
+                                    x-transition
+                                    class="rounded-[22px] bg-[#1e2938] border border-[#2b3a4d] p-5 shadow-lg hover:border-primary/50 transition-all flex flex-col justify-between gap-4"
+                                >
+                                    {{-- Fila Superior --}}
+                                    <div class="flex items-start justify-between gap-3">
+                                        {{-- Izquierda: Cliente y Código --}}
+                                        <div class="flex flex-col min-w-0">
+                                            <h3 class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $clienteNombre }}">
+                                                {{ $clienteNombre }}
+                                            </h3>
+                                            <span class="text-sm font-semibold text-[#6d7e93] mt-0.5">
+                                                {{ $codigo }}
+                                            </span>
+                                        </div>
 
-                    </div>
+                                        {{-- Derecha: Dispositivo y Falla --}}
+                                        <div class="flex flex-col items-end text-right min-w-0">
+                                            <span class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $marcaModelo }}">
+                                                {{ $marcaModelo }}
+                                            </span>
+                                            <span class="text-sm font-medium text-text-secondary mt-0.5 truncate max-w-[160px]" title="{{ $reparacion->falla_reportada }}">
+                                                {{ $reparacion->falla_reportada }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {{-- Fila Inferior --}}
+                                    <div class="flex items-center justify-between pt-1">
+                                        {{-- Tiempo transcurrido en cursiva --}}
+                                        <span class="text-sm italic font-medium text-[#738294]">
+                                            {{ $reparacion->tiempo_transcurrido }}
+                                        </span>
+
+                                        {{-- Botón Ojo Azul --}}
+                                        <button
+                                            type="button"
+                                            @click="verDetalle({{ json_encode([
+                                                'id' => $reparacion->id,
+                                                'codigo_seguimiento' => $codigo,
+                                                'cliente_nombre' => $clienteNombre,
+                                                'cliente_telefono' => $reparacion->dispositivo?->cliente?->telefono ?? 'Sin teléfono',
+                                                'cliente_email' => $reparacion->dispositivo?->cliente?->email ?? 'Sin correo',
+                                                'dispositivo_marca_modelo' => $marcaModelo,
+                                                'imei_o_serie' => $reparacion->dispositivo?->imei_o_serie ?? 'No especificado',
+                                                'clave_de_acceso' => $reparacion->clave_de_acceso ?? 'Sin clave',
+                                                'falla_reportada' => $reparacion->falla_reportada,
+                                                'costo_estimado' => $reparacion->costo_estimado ? ('$' . number_format($reparacion->costo_estimado, 0, ',', '.')) : 'Sin costo estimado',
+                                                'sena' => $reparacion->sena ? ('$' . number_format($reparacion->sena, 0, ',', '.')) : '$0',
+                                                'saldo_pendiente' => '$' . number_format($reparacion->saldo_pendiente, 0, ',', '.'),
+                                                'estado' => ucfirst($reparacion->estado ?? 'Recibido'),
+                                                'notas_internas' => $reparacion->notas_internas ?? '',
+                                                'fecha_ingreso' => $reparacion->created_at ? $reparacion->created_at->format('d/m/Y H:i') : '-',
+                                                'tiempo_relativo' => $reparacion->tiempo_transcurrido,
+                                                'tecnico' => $reparacion->usuario?->name ?? 'No asignado'
+                                            ]) }})"
+                                            class="flex h-10 w-12 items-center justify-center rounded-2xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                                            title="Ver detalles de la reparación"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
 
                 </div>
 
@@ -110,35 +195,112 @@
                 ====================================== --}}
 
                 <div
-                    class="flex h-[516px] flex-col rounded-[30px] border-4 border-border bg-surface p-7"
+                    class="flex h-[560px] flex-col rounded-[30px] border-4 border-border bg-surface p-6"
                 >
 
-                    <h2 class="font-bold">
-                        En Reparación
-                    </h2>
-
-
-                    <div
-                        class="flex flex-1 items-center justify-center"
-                    >
-
-                        {{-- Wrench --}}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="2"
-                            stroke="currentColor"
-                            class="h-12 w-12 text-border"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M11.42 15.17 17.25 21 21 17.25l-5.83-5.83m-3.75 3.75L6 20.5 3.5 18l5.33-5.33M15 3a6 6 0 0 0-7.3 7.3L3 15l6 6 4.7-4.7A6 6 0 0 0 15 3Z"
-                            />
-                        </svg>
-
+                    <div class="flex items-center justify-between pb-3">
+                        <h2 class="text-xl font-bold text-white tracking-wide">
+                            En Reparación
+                        </h2>
+                        <span class="flex h-7 min-w-7 items-center justify-center rounded-full bg-surface-hover px-2.5 text-xs font-bold text-text-secondary border border-border/40">
+                            {{ $reparacionesEnProceso->count() }}
+                        </span>
                     </div>
+
+
+                    @if ($reparacionesEnProceso->isEmpty())
+                        <div
+                            class="flex flex-1 items-center justify-center"
+                        >
+                            {{-- Wrench --}}
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                                stroke="currentColor"
+                                class="h-12 w-12 text-border"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M11.42 15.17 17.25 21 21 17.25l-5.83-5.83m-3.75 3.75L6 20.5 3.5 18l5.33-5.33M15 3a6 6 0 0 0-7.3 7.3L3 15l6 6 4.7-4.7A6 6 0 0 0 15 3Z"
+                                />
+                            </svg>
+                        </div>
+                    @else
+                        <div class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1">
+                            @foreach ($reparacionesEnProceso as $reparacion)
+                                @php
+                                    $clienteNombre = $reparacion->dispositivo?->cliente?->nombre ?? 'Cliente';
+                                    $marcaModelo = $reparacion->dispositivo?->marca_y_modelo ?? 'Dispositivo';
+                                    $codigo = $reparacion->codigo_seguimiento ? ('#' . $reparacion->codigo_seguimiento) : ('#' . $reparacion->id);
+                                    $searchTarget = strtolower($clienteNombre . ' ' . $marcaModelo . ' ' . $reparacion->falla_reportada . ' ' . $codigo . ' ' . $reparacion->id);
+                                @endphp
+                                <div
+                                    x-show="!search || '{{ addslashes($searchTarget) }}'.includes(search.toLowerCase())"
+                                    x-transition
+                                    class="rounded-[22px] bg-[#1e2938] border border-[#2b3a4d] p-5 shadow-lg hover:border-primary/50 transition-all flex flex-col justify-between gap-4"
+                                >
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="flex flex-col min-w-0">
+                                            <h3 class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $clienteNombre }}">
+                                                {{ $clienteNombre }}
+                                            </h3>
+                                            <span class="text-sm font-semibold text-[#6d7e93] mt-0.5">
+                                                {{ $codigo }}
+                                            </span>
+                                        </div>
+
+                                        <div class="flex flex-col items-end text-right min-w-0">
+                                            <span class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $marcaModelo }}">
+                                                {{ $marcaModelo }}
+                                            </span>
+                                            <span class="text-sm font-medium text-text-secondary mt-0.5 truncate max-w-[160px]" title="{{ $reparacion->falla_reportada }}">
+                                                {{ $reparacion->falla_reportada }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between pt-1">
+                                        <span class="text-sm italic font-medium text-[#738294]">
+                                            {{ $reparacion->tiempo_transcurrido }}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            @click="verDetalle({{ json_encode([
+                                                'id' => $reparacion->id,
+                                                'codigo_seguimiento' => $codigo,
+                                                'cliente_nombre' => $clienteNombre,
+                                                'cliente_telefono' => $reparacion->dispositivo?->cliente?->telefono ?? 'Sin teléfono',
+                                                'cliente_email' => $reparacion->dispositivo?->cliente?->email ?? 'Sin correo',
+                                                'dispositivo_marca_modelo' => $marcaModelo,
+                                                'imei_o_serie' => $reparacion->dispositivo?->imei_o_serie ?? 'No especificado',
+                                                'clave_de_acceso' => $reparacion->clave_de_acceso ?? 'Sin clave',
+                                                'falla_reportada' => $reparacion->falla_reportada,
+                                                'costo_estimado' => $reparacion->costo_estimado ? ('$' . number_format($reparacion->costo_estimado, 0, ',', '.')) : 'Sin costo estimado',
+                                                'sena' => $reparacion->sena ? ('$' . number_format($reparacion->sena, 0, ',', '.')) : '$0',
+                                                'saldo_pendiente' => '$' . number_format($reparacion->saldo_pendiente, 0, ',', '.'),
+                                                'estado' => ucfirst($reparacion->estado ?? 'En Reparación'),
+                                                'notas_internas' => $reparacion->notas_internas ?? '',
+                                                'fecha_ingreso' => $reparacion->created_at ? $reparacion->created_at->format('d/m/Y H:i') : '-',
+                                                'tiempo_relativo' => $reparacion->tiempo_transcurrido,
+                                                'tecnico' => $reparacion->usuario?->name ?? 'No asignado'
+                                            ]) }})"
+                                            class="flex h-10 w-12 items-center justify-center rounded-2xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                                            title="Ver detalles de la reparación"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
 
                 </div>
 
@@ -149,44 +311,121 @@
                 ====================================== --}}
 
                 <div
-                    class="flex h-[516px] flex-col rounded-[30px] border-4 border-primary-hover bg-surface-hover p-7"
+                    class="flex h-[560px] flex-col rounded-[30px] border-4 border-primary-hover bg-surface-hover p-6"
                 >
 
-                    <h2 class="font-bold">
-                        Listos
-                    </h2>
-
-
-                    <div
-                        class="flex flex-1 items-center justify-center"
-                    >
-
-                        {{-- Check --}}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="2"
-                            stroke="currentColor"
-                            class="h-12 w-12 text-primary-hover"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M9 12.75 11.25 15 15 9.75"
-                            />
-
-                            <rect
-                                width="16"
-                                height="16"
-                                x="4"
-                                y="4"
-                                rx="2"
-                            />
-
-                        </svg>
-
+                    <div class="flex items-center justify-between pb-3">
+                        <h2 class="text-xl font-bold text-white tracking-wide">
+                            Listos
+                        </h2>
+                        <span class="flex h-7 min-w-7 items-center justify-center rounded-full bg-primary/20 px-2.5 text-xs font-bold text-primary-light border border-primary/30">
+                            {{ $reparacionesListas->count() }}
+                        </span>
                     </div>
+
+
+                    @if ($reparacionesListas->isEmpty())
+                        <div
+                            class="flex flex-1 items-center justify-center"
+                        >
+                            {{-- Check --}}
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                                stroke="currentColor"
+                                class="h-12 w-12 text-primary-hover"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M9 12.75 11.25 15 15 9.75"
+                                />
+
+                                <rect
+                                    width="16"
+                                    height="16"
+                                    x="4"
+                                    y="4"
+                                    rx="2"
+                                />
+
+                            </svg>
+                        </div>
+                    @else
+                        <div class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1">
+                            @foreach ($reparacionesListas as $reparacion)
+                                @php
+                                    $clienteNombre = $reparacion->dispositivo?->cliente?->nombre ?? 'Cliente';
+                                    $marcaModelo = $reparacion->dispositivo?->marca_y_modelo ?? 'Dispositivo';
+                                    $codigo = $reparacion->codigo_seguimiento ? ('#' . $reparacion->codigo_seguimiento) : ('#' . $reparacion->id);
+                                    $searchTarget = strtolower($clienteNombre . ' ' . $marcaModelo . ' ' . $reparacion->falla_reportada . ' ' . $codigo . ' ' . $reparacion->id);
+                                @endphp
+                                <div
+                                    x-show="!search || '{{ addslashes($searchTarget) }}'.includes(search.toLowerCase())"
+                                    x-transition
+                                    class="rounded-[22px] bg-[#1e2938] border border-[#2b3a4d] p-5 shadow-lg hover:border-primary/50 transition-all flex flex-col justify-between gap-4"
+                                >
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="flex flex-col min-w-0">
+                                            <h3 class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $clienteNombre }}">
+                                                {{ $clienteNombre }}
+                                            </h3>
+                                            <span class="text-sm font-semibold text-[#6d7e93] mt-0.5">
+                                                {{ $codigo }}
+                                            </span>
+                                        </div>
+
+                                        <div class="flex flex-col items-end text-right min-w-0">
+                                            <span class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $marcaModelo }}">
+                                                {{ $marcaModelo }}
+                                            </span>
+                                            <span class="text-sm font-medium text-text-secondary mt-0.5 truncate max-w-[160px]" title="{{ $reparacion->falla_reportada }}">
+                                                {{ $reparacion->falla_reportada }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between pt-1">
+                                        <span class="text-sm italic font-medium text-[#738294]">
+                                            {{ $reparacion->tiempo_transcurrido }}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            @click="verDetalle({{ json_encode([
+                                                'id' => $reparacion->id,
+                                                'codigo_seguimiento' => $codigo,
+                                                'cliente_nombre' => $clienteNombre,
+                                                'cliente_telefono' => $reparacion->dispositivo?->cliente?->telefono ?? 'Sin teléfono',
+                                                'cliente_email' => $reparacion->dispositivo?->cliente?->email ?? 'Sin correo',
+                                                'dispositivo_marca_modelo' => $marcaModelo,
+                                                'imei_o_serie' => $reparacion->dispositivo?->imei_o_serie ?? 'No especificado',
+                                                'clave_de_acceso' => $reparacion->clave_de_acceso ?? 'Sin clave',
+                                                'falla_reportada' => $reparacion->falla_reportada,
+                                                'costo_estimado' => $reparacion->costo_estimado ? ('$' . number_format($reparacion->costo_estimado, 0, ',', '.')) : 'Sin costo estimado',
+                                                'sena' => $reparacion->sena ? ('$' . number_format($reparacion->sena, 0, ',', '.')) : '$0',
+                                                'saldo_pendiente' => '$' . number_format($reparacion->saldo_pendiente, 0, ',', '.'),
+                                                'estado' => ucfirst($reparacion->estado ?? 'Listo'),
+                                                'notas_internas' => $reparacion->notas_internas ?? '',
+                                                'fecha_ingreso' => $reparacion->created_at ? $reparacion->created_at->format('d/m/Y H:i') : '-',
+                                                'tiempo_relativo' => $reparacion->tiempo_transcurrido,
+                                                'tecnico' => $reparacion->usuario?->name ?? 'No asignado'
+                                            ]) }})"
+                                            class="flex h-10 w-12 items-center justify-center rounded-2xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                                            title="Ver detalles de la reparación"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
 
                 </div>
 
@@ -440,6 +679,201 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        {{-- =========================================
+            MODAL DETALLE DE REPARACIÓN (Vista Rápida)
+        ========================================== --}}
+        <div
+            x-show="openDetailModal"
+            x-cloak
+            @keydown.escape.window="openDetailModal = false"
+            class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+        >
+            {{-- Backdrop --}}
+            <div
+                x-show="openDetailModal"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                @click="openDetailModal = false"
+                class="fixed inset-0 bg-black/75 backdrop-blur-sm"
+            ></div>
+
+            {{-- Modal Box --}}
+            <div
+                x-show="openDetailModal"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                class="relative z-10 w-full max-w-4xl max-h-[90vh] rounded-3xl bg-[#141c25] p-5 sm:p-7 shadow-2xl border border-border/30 overflow-y-auto my-auto"
+            >
+                {{-- Encabezado Modal --}}
+                <div class="flex items-center justify-between border-b border-border/30 pb-4 mb-5">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-white tracking-wide">
+                                Reparación <span class="text-primary-light" x-text="selectedReparacion?.codigo_seguimiento"></span>
+                            </h2>
+                            <p class="text-xs text-text-disabled" x-text="selectedReparacion?.tiempo_relativo"></p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="px-3.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase"
+                            :class="{
+                                'bg-[#0081cc]/20 text-[#33b4ff] border border-[#0081cc]/40': selectedReparacion?.estado === 'Recibido',
+                                'bg-warning/20 text-warning border border-warning/40': selectedReparacion?.estado === 'En Reparación' || selectedReparacion?.estado === 'En reparacion',
+                                'bg-success/20 text-success border border-success/40': selectedReparacion?.estado === 'Listo' || selectedReparacion?.estado === 'Listos'
+                            }"
+                            x-text="selectedReparacion?.estado"
+                        ></span>
+
+                        <button
+                            type="button"
+                            @click="openDetailModal = false"
+                            class="text-text-disabled hover:text-white transition-colors p-1.5 rounded-xl hover:bg-surface-hover cursor-pointer"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Grid 2 Columnas Detalle --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+
+                    {{-- COLUMNA IZQUIERDA: CLIENTE Y FALLA --}}
+                    <div class="flex flex-col gap-4 rounded-2xl bg-[#273343] p-4 sm:p-5 border border-border/20">
+
+                        {{-- Encabezado Cliente --}}
+                        <div class="flex items-center justify-between pb-1 border-b border-white/10">
+                            <h3 class="text-lg sm:text-xl font-bold text-white tracking-wide flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-5 h-5 text-[#0081cc]">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.72m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.773m0 0A5.97 5.97 0 0 0 6 18.72m0 0a9.093 9.093 0 0 1-3.741-.479 3 3 0 0 1 4.682-2.72m.94 3.198.001.031c0 .225.012.447.037.666A11.94 11.94 0 0 0 12 21M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm6 3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+                                </svg>
+                                Cliente
+                            </h3>
+                        </div>
+
+                        {{-- Nombre --}}
+                        <div class="rounded-xl bg-[#1c2530] p-3 border border-border/20">
+                            <span class="block text-xs font-semibold text-text-disabled uppercase tracking-wider">Nombre</span>
+                            <span class="text-base font-bold text-white" x-text="selectedReparacion?.cliente_nombre"></span>
+                        </div>
+
+                        {{-- Teléfono y Email --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="rounded-xl bg-[#1c2530] p-3 border border-border/20">
+                                <span class="block text-xs font-semibold text-text-disabled uppercase tracking-wider">Teléfono</span>
+                                <span class="text-sm font-semibold text-primary-light" x-text="selectedReparacion?.cliente_telefono"></span>
+                            </div>
+                            <div class="rounded-xl bg-[#1c2530] p-3 border border-border/20">
+                                <span class="block text-xs font-semibold text-text-disabled uppercase tracking-wider">Email</span>
+                                <span class="text-sm font-medium text-gray-300 truncate block" x-text="selectedReparacion?.cliente_email"></span>
+                            </div>
+                        </div>
+
+                        {{-- Falla Reportada --}}
+                        <div class="rounded-xl bg-[#1c2530] p-3 border border-border/20">
+                            <span class="block text-xs font-semibold text-text-disabled uppercase tracking-wider mb-1">Falla Reportada</span>
+                            <p class="text-sm font-medium text-white/90 whitespace-pre-wrap leading-relaxed" x-text="selectedReparacion?.falla_reportada"></p>
+                        </div>
+
+                        {{-- Seña abonada --}}
+                        <div class="rounded-xl bg-[#1c2530] p-3 border border-border/20 flex items-center justify-between">
+                            <span class="text-xs font-semibold text-text-disabled uppercase tracking-wider">Seña Abonada</span>
+                            <span class="text-base font-bold text-success" x-text="selectedReparacion?.sena"></span>
+                        </div>
+
+                    </div>
+
+                    {{-- COLUMNA DERECHA: DISPOSITIVO Y DATOS ECONÓMICOS --}}
+                    <div class="flex flex-col gap-4 rounded-2xl bg-[#273343] p-4 sm:p-5 border border-border/20">
+
+                        {{-- Encabezado Dispositivo --}}
+                        <div class="flex items-center justify-between pb-1 border-b border-white/10">
+                            <h3 class="text-lg sm:text-xl font-bold text-white tracking-wide flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-5 h-5 text-[#0081cc]">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21 21 17.25l-5.83-5.83m-3.75 3.75L6 20.5 3.5 18l5.33-5.33M15 3a6 6 0 0 0-7.3 7.3L3 15l6 6 4.7-4.7A6 6 0 0 0 15 3Z" />
+                                </svg>
+                                Dispositivo
+                            </h3>
+                        </div>
+
+                        {{-- Marca y Modelo --}}
+                        <div class="rounded-xl bg-[#1c2530] p-3 border border-border/20">
+                            <span class="block text-xs font-semibold text-text-disabled uppercase tracking-wider">Marca y Modelo</span>
+                            <span class="text-base font-bold text-white" x-text="selectedReparacion?.dispositivo_marca_modelo"></span>
+                        </div>
+
+                        {{-- Clave de acceso e IMEI --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="rounded-xl bg-[#1c2530] p-3 border border-border/20">
+                                <span class="block text-xs font-semibold text-text-disabled uppercase tracking-wider">Clave de Acceso</span>
+                                <span class="text-sm font-semibold text-gray-200" x-text="selectedReparacion?.clave_de_acceso"></span>
+                            </div>
+                            <div class="rounded-xl bg-[#1c2530] p-3 border border-border/20">
+                                <span class="block text-xs font-semibold text-text-disabled uppercase tracking-wider">IMEI / Serie</span>
+                                <span class="text-sm font-medium text-gray-300 truncate block" x-text="selectedReparacion?.imei_o_serie"></span>
+                            </div>
+                        </div>
+
+                        {{-- Costo y Saldo Pendiente --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="rounded-xl bg-[#1c2530] p-3 border border-border/20">
+                                <span class="block text-xs font-semibold text-text-disabled uppercase tracking-wider">Valor Estimado</span>
+                                <span class="text-base font-bold text-white" x-text="selectedReparacion?.costo_estimado"></span>
+                            </div>
+                            <div class="rounded-xl bg-[#1c2530] p-3 border border-border/20">
+                                <span class="block text-xs font-semibold text-text-disabled uppercase tracking-wider">Saldo Pendiente</span>
+                                <span class="text-base font-bold text-warning" x-text="selectedReparacion?.saldo_pendiente"></span>
+                            </div>
+                        </div>
+
+                        {{-- Fecha de ingreso y Técnico --}}
+                        <div class="rounded-xl bg-[#1c2530] p-3 border border-border/20 flex items-center justify-between">
+                            <div>
+                                <span class="block text-xs font-semibold text-text-disabled uppercase tracking-wider">Fecha de Ingreso</span>
+                                <span class="text-sm font-medium text-gray-300" x-text="selectedReparacion?.fecha_ingreso"></span>
+                            </div>
+                            <div class="text-right">
+                                <span class="block text-xs font-semibold text-text-disabled uppercase tracking-wider">Técnico</span>
+                                <span class="text-sm font-medium text-gray-300" x-text="selectedReparacion?.tecnico"></span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {{-- Pie del modal: Acciones --}}
+                <div class="flex items-center justify-end gap-4 pt-5 mt-2 border-t border-border/20">
+                    <button
+                        type="button"
+                        @click="openDetailModal = false"
+                        class="h-11 rounded-xl bg-surface-hover hover:bg-[#364252] px-6 text-sm font-bold text-white transition-all cursor-pointer"
+                    >
+                        Cerrar
+                    </button>
+                </div>
             </div>
         </div>
     </main>

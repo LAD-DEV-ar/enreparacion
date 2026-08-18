@@ -6,11 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cliente extends Model
 {
-    public function dispositivos(){
+    public function dispositivos()
+    {
         return $this->hasMany(Dispositivo::class, 'clientes_id');
     }
-    public function negocio(){
-        return $this->belongsTo(Negocio::class);
+
+    public function negocio()
+    {
+        return $this->belongsTo(Negocio::class, 'negocios_id');
     }
     protected $fillable = [
         'negocios_id',

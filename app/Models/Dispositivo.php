@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Dispositivo extends Model
 {
-    public function cliente(){
-        return $this->belongsTo(Cliente::class);
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class, 'clientes_id');
     }
-    public function reparaciones(){
+
+    public function reparaciones()
+    {
         return $this->hasMany(Reparacion::class, 'dispositivos_id');
     }
     //
