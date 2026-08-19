@@ -121,3 +121,44 @@
         </div>
     </div>
 @endif
+
+{{-- Dynamic Toast for Alpine / AJAX events --}}
+<div
+    x-data="{
+        show: false,
+        message: '',
+        type: 'success',
+        timer: null
+    }"
+    @toast.window="
+        message = $event.detail.message || $event.detail;
+        type = $event.detail.type || 'success';
+        show = true;
+        clearTimeout(timer);
+        timer = setTimeout(() => show = false, 3500);
+    "
+    x-show="show"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0 translate-x-5"
+    x-transition:enter-end="opacity-100 translate-x-0"
+    x-transition:leave="transition ease-in duration-300"
+    x-transition:leave-start="opacity-100 translate-x-0"
+    x-transition:leave-end="opacity-0 translate-x-5"
+    x-cloak
+    class="fixed top-5 right-5 z-50 rounded-xl px-5 py-3 text-white shadow-2xl font-semibold flex items-center gap-3 border border-white/20"
+    :class="{
+        'bg-success shadow-success/20': type === 'success',
+        'bg-danger shadow-danger/20': type === 'error',
+        'bg-warning shadow-warning/20': type === 'warning',
+        'bg-info shadow-info/20': type === 'info'
+    }"
+>
+    <span x-text="message"></span>
+    <button
+        type="button"
+        @click="show = false"
+        class="text-xl font-bold ml-2 leading-none text-white/80 hover:text-white cursor-pointer"
+    >
+        ×
+    </button>
+</div>

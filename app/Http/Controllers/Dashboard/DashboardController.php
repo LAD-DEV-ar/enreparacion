@@ -11,10 +11,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Traits\GeneraCodigoReparacion;
+use App\Traits\FormateaFechaArgentina;
 
 class DashboardController extends Controller
 {
-    use GeneraCodigoReparacion;
+    use GeneraCodigoReparacion, FormateaFechaArgentina;
     
     public function index()
     {
@@ -30,10 +31,38 @@ class DashboardController extends Controller
         ->latest()
         ->get();
 
+        $transformar = function ($reparacion) {
+            $clienteNombre = $reparacion->dispositivo?->cliente?->nombre ?? 'Cliente';
+            $marcaModelo = $reparacion->dispositivo?->marca_y_modelo ?? 'Dispositivo';
+            $codigo = $reparacion->codigo_seguimiento ? ('#' . $reparacion->codigo_seguimiento) : ('#' . $reparacion->id);
+
+            return [
+                'id' => $reparacion->id,
+                'codigo_seguimiento' => $codigo,
+                'cliente_nombre' => $clienteNombre,
+                'cliente_telefono' => $reparacion->dispositivo?->cliente?->telefono ?? 'Sin teléfono',
+                'cliente_email' => $reparacion->dispositivo?->cliente?->email ?? 'Sin correo',
+                'dispositivo_marca_modelo' => $marcaModelo,
+                'imei_o_serie' => $reparacion->dispositivo?->imei_o_serie ?? 'No especificado',
+                'clave_de_acceso' => $reparacion->clave_de_acceso ?? 'Sin clave',
+                'falla_reportada' => $reparacion->falla_reportada,
+                'costo_estimado' => $reparacion->costo_estimado ? ('$' . number_format($reparacion->costo_estimado, 0, ',', '.')) : 'Sin costo estimado',
+                'sena' => $reparacion->sena ? ('$' . number_format($reparacion->sena, 0, ',', '.')) : '$0',
+                'saldo_pendiente' => '$' . number_format($reparacion->saldo_pendiente, 0, ',', '.'),
+                'estado' => ucfirst($reparacion->estado ?? 'Recibido'),
+                'estado_slug' => strtolower($reparacion->estado ?? 'recibido'),
+                'notas_internas' => $reparacion->notas_internas ?? '',
+                'fecha_ingreso' => $this->formatearFechaHoraArgentina($reparacion->created_at),
+                'tiempo_relativo' => $this->tiempoTranscurridoArgentina($reparacion->created_at),
+                'tecnico' => $reparacion->usuario?->name ?? 'No asignado',
+                'search_target' => strtolower($clienteNombre . ' ' . $marcaModelo . ' ' . $reparacion->falla_reportada . ' ' . $codigo . ' ' . $reparacion->id)
+            ];
+        };
+
         // Filtramos las reparaciones según su estado para cada columna del tablero
         $reparacionesRecibidas = $reparaciones->filter(function ($reparacion) {
             return strtolower($reparacion->estado ?? '') === 'recibido';
-        });
+        })->map($transformar)->values();
 
         $reparacionesEnProceso = $reparaciones->filter(function ($reparacion) {
             return in_array(strtolower($reparacion->estado ?? ''), [
@@ -43,7 +72,7 @@ class DashboardController extends Controller
                 'en_proceso',
                 'en proceso'
             ]);
-        });
+        })->map($transformar)->values();
 
         $reparacionesListas = $reparaciones->filter(function ($reparacion) {
             return in_array(strtolower($reparacion->estado ?? ''), [
@@ -52,7 +81,7 @@ class DashboardController extends Controller
                 'finalizado',
                 'terminado'
             ]);
-        });
+        })->map($transformar)->values();
 
         return view('home.dashboard', compact(
             'reparaciones',
@@ -123,5 +152,37 @@ class DashboardController extends Controller
 
 
         return redirect()->route('dashboard.index')->with('success', 'Reparación registrada correctamente.');
+    }
+
+    public function updateEstado(Request $request, Reparacion $reparacion)
+    {
+        $user = auth()->user();
+
+        if ($reparacion->negocios_id !== $user->negocios_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para modificar esta reparación.'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'estado' => ['required', 'string', 'in:recibido,en_reparacion,listo'],
+        ]);
+
+        $reparacion->estado = $validated['estado'];
+        $reparacion->save();
+
+        $labels = [
+            'recibido' => 'Recibidos',
+            'en_reparacion' => 'En Reparación',
+            'listo' => 'Listos'
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Estado actualizado a ' . ($labels[$validated['estado']] ?? $validated['estado']) . '.',
+            'estado' => $reparacion->estado,
+            'estado_label' => $labels[$validated['estado']] ?? $validated['estado']
+        ]);
     }
 }

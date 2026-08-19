@@ -13,6 +13,7 @@ Route::get('/', function () {
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index')->middleware(['auth', 'negocios_id']);
 Route::post('/dashboard', [DashboardController::class, 'store'])->name('dashboard.store');
+Route::patch('/dashboard/reparaciones/{reparacion}/estado', [DashboardController::class, 'updateEstado'])->name('dashboard.reparaciones.update-estado')->middleware(['auth', 'negocios_id']);
 
 Route::get('/auth/login', [LoginController::class, 'index'])->name('login');
 Route::post('/auth/login', [LoginController::class, 'store'])->name('login.store');

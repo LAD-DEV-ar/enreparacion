@@ -4,11 +4,162 @@
     <main class="ml-56 min-h-screen" x-data="{
         openModal: {{ $errors->any() ? 'true' : 'false' }},
         openDetailModal: false,
+        openConfirmModal: false,
+        isUpdating: false,
         search: '',
         selectedReparacion: null,
+        draggedItem: null,
+        dragOverColumn: null,
+        pendingMove: null,
+
+        recibidas: {{ Js::from($reparacionesRecibidas) }},
+        enProceso: {{ Js::from($reparacionesEnProceso) }},
+        listas: {{ Js::from($reparacionesListas) }},
+
+        filtradas(lista) {
+            if (!this.search || !this.search.trim()) return lista;
+            const q = this.search.toLowerCase().trim();
+            return lista.filter(item => item.search_target && item.search_target.includes(q));
+        },
+
+        columnaLabel(key) {
+            if (key === 'recibido') return 'Recibidos';
+            if (key === 'en_reparacion') return 'En Reparación';
+            if (key === 'listo') return 'Listos';
+            return key || '';
+        },
+
         verDetalle(item) {
             this.selectedReparacion = item;
             this.openDetailModal = true;
+        },
+
+        onDragStart(e, item, fromColumn) {
+            this.draggedItem = { item: item, from: fromColumn };
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(item.id));
+            if (e.target) {
+                e.target.classList.add('opacity-40');
+            }
+        },
+
+        onDragEnd(e) {
+            if (e && e.target) {
+                e.target.classList.remove('opacity-40');
+            }
+            this.dragOverColumn = null;
+        },
+
+        onDragOver(columna) {
+            this.dragOverColumn = columna;
+        },
+
+        onDragLeave(columna) {
+            if (this.dragOverColumn === columna) {
+                this.dragOverColumn = null;
+            }
+        },
+
+        onDrop(targetColumn) {
+            const fromCol = this.draggedItem?.from;
+            const item = this.draggedItem?.item;
+            this.dragOverColumn = null;
+
+            if (!item || !fromCol || fromCol === targetColumn) {
+                this.draggedItem = null;
+                return;
+            }
+
+            this.pendingMove = {
+                item: item,
+                from: fromCol,
+                to: targetColumn
+            };
+            this.openConfirmModal = true;
+        },
+
+        cancelarCambio() {
+            this.openConfirmModal = false;
+            this.pendingMove = null;
+            this.draggedItem = null;
+            this.dragOverColumn = null;
+        },
+
+        async confirmarCambio() {
+            if (!this.pendingMove || this.isUpdating) return;
+
+            this.isUpdating = true;
+            const { item, from, to } = this.pendingMove;
+
+            try {
+                const url = `{{ url('/dashboard/reparaciones') }}/${item.id}/estado`;
+                const response = await fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ estado: to })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Quitar de la columna de origen
+                    if (from === 'recibido') {
+                        this.recibidas = this.recibidas.filter(r => r.id !== item.id);
+                    } else if (from === 'en_reparacion') {
+                        this.enProceso = this.enProceso.filter(r => r.id !== item.id);
+                    } else if (from === 'listo') {
+                        this.listas = this.listas.filter(r => r.id !== item.id);
+                    }
+
+                    // Actualizar item
+                    const updatedItem = {
+                        ...item,
+                        estado: this.columnaLabel(to),
+                        estado_slug: to
+                    };
+
+                    // Agregar a la columna de destino
+                    if (to === 'recibido') {
+                        this.recibidas.unshift(updatedItem);
+                    } else if (to === 'en_reparacion') {
+                        this.enProceso.unshift(updatedItem);
+                    } else if (to === 'listo') {
+                        this.listas.unshift(updatedItem);
+                    }
+
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: {
+                            message: data.message || `Reparación movida a ${this.columnaLabel(to)}`,
+                            type: 'success'
+                        }
+                    }));
+
+                    this.openConfirmModal = false;
+                    this.pendingMove = null;
+                    this.draggedItem = null;
+                } else {
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: {
+                            message: data.message || 'Error al actualizar el estado de la reparación.',
+                            type: 'error'
+                        }
+                    }));
+                }
+            } catch (error) {
+                console.error('Error al actualizar estado:', error);
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: {
+                        message: 'Hubo un error de conexión al actualizar el estado.',
+                        type: 'error'
+                    }
+                }));
+            } finally {
+                this.isUpdating = false;
+            }
         }
     }">
         @include('components.sidebar')
@@ -66,370 +217,276 @@
 
 
             {{-- =========================================
-                ESTADOS DE REPARACIONES
+                ESTADOS DE REPARACIONES (Tablero Kanban Drag & Drop)
             ========================================== --}}
 
             <div class="mt-8 grid grid-cols-3 gap-12">
 
 
                 {{-- =====================================
-                    RECIBIDOS
+                    COLUMNA: RECIBIDOS
                 ====================================== --}}
 
                 <div
-                    class="flex h-[560px] flex-col rounded-[30px] border-4 border-border bg-background p-6"
+                    class="flex h-[560px] flex-col rounded-[30px] border-4 p-6 transition-all duration-200"
+                    :class="dragOverColumn === 'recibido' ? 'border-primary ring-4 ring-primary/25 bg-primary/5' : 'border-border bg-background'"
+                    @dragover.prevent="onDragOver('recibido')"
+                    @dragenter.prevent="onDragOver('recibido')"
+                    @dragleave="onDragLeave('recibido')"
+                    @drop.prevent="onDrop('recibido')"
                 >
 
                     <div class="flex items-center justify-between pb-3">
                         <h2 class="text-xl font-bold text-white tracking-wide">
                             Recibidos
                         </h2>
-                        <span class="flex h-7 min-w-7 items-center justify-center rounded-full bg-surface-hover px-2.5 text-xs font-bold text-text-secondary border border-border/40">
-                            {{ $reparacionesRecibidas->count() }}
+                        <span class="flex h-7 min-w-7 items-center justify-center rounded-full bg-surface-hover px-2.5 text-xs font-bold text-text-secondary border border-border/40" x-text="recibidas.length"></span>
+                    </div>
+
+                    {{-- Estado vacío --}}
+                    <div
+                        x-show="recibidas.length === 0"
+                        class="flex flex-1 flex-col items-center justify-center select-none pointer-events-none"
+                    >
+                        <span class="text-8xl font-medium leading-none text-text-disabled">
+                            0
+                        </span>
+                        <span class="mt-2 text-3xl text-text-disabled">
+                            Recibidos
                         </span>
                     </div>
 
-
-                    @if ($reparacionesRecibidas->isEmpty())
-                        <div
-                            class="flex flex-1 flex-col items-center justify-center"
-                        >
-                            <span
-                                class="text-8xl font-medium leading-none text-text-disabled"
+                    {{-- Lista de tarjetas --}}
+                    <div
+                        x-show="recibidas.length > 0"
+                        class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1"
+                    >
+                        <template x-for="item in filtradas(recibidas)" :key="item.id">
+                            <div
+                                draggable="true"
+                                @dragstart="onDragStart($event, item, 'recibido')"
+                                @dragend="onDragEnd($event)"
+                                class="rounded-[22px] bg-[#1e2938] border border-[#2b3a4d] p-4.5 shadow-lg hover:border-primary/50 transition-all flex flex-col justify-between gap-3.5 cursor-grab active:cursor-grabbing select-none"
                             >
-                                0
-                            </span>
-
-                            <span
-                                class="mt-2 text-3xl text-text-disabled"
-                            >
-                                Recibidos
-                            </span>
-                        </div>
-                    @else
-                        <div class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1">
-                            @foreach ($reparacionesRecibidas as $reparacion)
-                                @php
-                                    $clienteNombre = $reparacion->dispositivo?->cliente?->nombre ?? 'Cliente';
-                                    $marcaModelo = $reparacion->dispositivo?->marca_y_modelo ?? 'Dispositivo';
-                                    $codigo = $reparacion->codigo_seguimiento ? ('#' . $reparacion->codigo_seguimiento) : ('#' . $reparacion->id);
-                                    $searchTarget = strtolower($clienteNombre . ' ' . $marcaModelo . ' ' . $reparacion->falla_reportada . ' ' . $codigo . ' ' . $reparacion->id);
-                                @endphp
-                                <div
-                                    x-show="!search || '{{ addslashes($searchTarget) }}'.includes(search.toLowerCase())"
-                                    x-transition
-                                    class="rounded-[22px] bg-[#1e2938] border border-[#2b3a4d] p-5 shadow-lg hover:border-primary/50 transition-all flex flex-col justify-between gap-4"
-                                >
-                                    {{-- Fila Superior --}}
-                                    <div class="flex items-start justify-between gap-3">
-                                        {{-- Izquierda: Cliente y Código --}}
-                                        <div class="flex flex-col min-w-0">
-                                            <h3 class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $clienteNombre }}">
-                                                {{ $clienteNombre }}
-                                            </h3>
-                                            <span class="text-sm font-semibold text-[#6d7e93] mt-0.5">
-                                                {{ $codigo }}
-                                            </span>
-                                        </div>
-
-                                        {{-- Derecha: Dispositivo y Falla --}}
-                                        <div class="flex flex-col items-end text-right min-w-0">
-                                            <span class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $marcaModelo }}">
-                                                {{ $marcaModelo }}
-                                            </span>
-                                            <span class="text-sm font-medium text-text-secondary mt-0.5 truncate max-w-[160px]" title="{{ $reparacion->falla_reportada }}">
-                                                {{ $reparacion->falla_reportada }}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {{-- Fila Inferior --}}
-                                    <div class="flex items-center justify-between pt-1">
-                                        {{-- Tiempo transcurrido en cursiva --}}
-                                        <span class="text-sm italic font-medium text-[#738294]">
-                                            {{ $reparacion->tiempo_transcurrido }}
-                                        </span>
-
-                                        {{-- Botón Ojo Azul --}}
-                                        <button
-                                            type="button"
-                                            @click="verDetalle({{ json_encode([
-                                                'id' => $reparacion->id,
-                                                'codigo_seguimiento' => $codigo,
-                                                'cliente_nombre' => $clienteNombre,
-                                                'cliente_telefono' => $reparacion->dispositivo?->cliente?->telefono ?? 'Sin teléfono',
-                                                'cliente_email' => $reparacion->dispositivo?->cliente?->email ?? 'Sin correo',
-                                                'dispositivo_marca_modelo' => $marcaModelo,
-                                                'imei_o_serie' => $reparacion->dispositivo?->imei_o_serie ?? 'No especificado',
-                                                'clave_de_acceso' => $reparacion->clave_de_acceso ?? 'Sin clave',
-                                                'falla_reportada' => $reparacion->falla_reportada,
-                                                'costo_estimado' => $reparacion->costo_estimado ? ('$' . number_format($reparacion->costo_estimado, 0, ',', '.')) : 'Sin costo estimado',
-                                                'sena' => $reparacion->sena ? ('$' . number_format($reparacion->sena, 0, ',', '.')) : '$0',
-                                                'saldo_pendiente' => '$' . number_format($reparacion->saldo_pendiente, 0, ',', '.'),
-                                                'estado' => ucfirst($reparacion->estado ?? 'Recibido'),
-                                                'notas_internas' => $reparacion->notas_internas ?? '',
-                                                'fecha_ingreso' => $reparacion->created_at ? $reparacion->created_at->format('d/m/Y H:i') : '-',
-                                                'tiempo_relativo' => $reparacion->tiempo_transcurrido,
-                                                'tecnico' => $reparacion->usuario?->name ?? 'No asignado'
-                                            ]) }})"
-                                            class="flex h-10 w-12 items-center justify-center rounded-2xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
-                                            title="Ver detalles de la reparación"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                {{-- Header: Código y Tiempo --}}
+                                <div class="flex items-center justify-between gap-2 text-xs">
+                                    <span class="font-bold text-[#8ba0b8] bg-[#141c25] px-2.5 py-0.5 rounded-lg border border-border/40 shrink-0" x-text="item.codigo_seguimiento"></span>
+                                    <span class="text-xs italic font-medium text-[#738294] truncate" x-text="item.tiempo_relativo"></span>
                                 </div>
-                            @endforeach
-                        </div>
-                    @endif
+
+                                {{-- Cuerpo: Cliente, Dispositivo y Falla --}}
+                                <div class="flex flex-col gap-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-white tracking-tight truncate" :title="item.cliente_nombre" x-text="item.cliente_nombre"></h3>
+                                    <div class="text-xs font-semibold text-primary-light tracking-tight truncate" :title="item.dispositivo_marca_modelo" x-text="item.dispositivo_marca_modelo"></div>
+                                    <p class="text-xs font-medium text-text-secondary truncate mt-0.5" :title="item.falla_reportada" x-text="item.falla_reportada"></p>
+                                </div>
+
+                                {{-- Footer: Botón Acción --}}
+                                <div class="flex items-center justify-end pt-1 border-t border-border/20">
+                                    <button
+                                        type="button"
+                                        @click.stop="verDetalle(item)"
+                                        class="flex h-9 w-11 items-center justify-center rounded-xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                                        title="Ver detalles de la reparación"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
 
                 </div>
 
 
 
                 {{-- =====================================
-                    EN REPARACIÓN
+                    COLUMNA: EN REPARACIÓN
                 ====================================== --}}
 
                 <div
-                    class="flex h-[560px] flex-col rounded-[30px] border-4 border-border bg-surface p-6"
+                    class="flex h-[560px] flex-col rounded-[30px] border-4 p-6 transition-all duration-200"
+                    :class="dragOverColumn === 'en_reparacion' ? 'border-primary ring-4 ring-primary/25 bg-primary/5' : 'border-border bg-surface'"
+                    @dragover.prevent="onDragOver('en_reparacion')"
+                    @dragenter.prevent="onDragOver('en_reparacion')"
+                    @dragleave="onDragLeave('en_reparacion')"
+                    @drop.prevent="onDrop('en_reparacion')"
                 >
 
                     <div class="flex items-center justify-between pb-3">
                         <h2 class="text-xl font-bold text-white tracking-wide">
                             En Reparación
                         </h2>
-                        <span class="flex h-7 min-w-7 items-center justify-center rounded-full bg-surface-hover px-2.5 text-xs font-bold text-text-secondary border border-border/40">
-                            {{ $reparacionesEnProceso->count() }}
-                        </span>
+                        <span class="flex h-7 min-w-7 items-center justify-center rounded-full bg-surface-hover px-2.5 text-xs font-bold text-text-secondary border border-border/40" x-text="enProceso.length"></span>
                     </div>
 
-
-                    @if ($reparacionesEnProceso->isEmpty())
-                        <div
-                            class="flex flex-1 items-center justify-center"
+                    {{-- Estado vacío --}}
+                    <div
+                        x-show="enProceso.length === 0"
+                        class="flex flex-1 items-center justify-center select-none pointer-events-none"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2"
+                            stroke="currentColor"
+                            class="h-12 w-12 text-border"
                         >
-                            {{-- Wrench --}}
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="2"
-                                stroke="currentColor"
-                                class="h-12 w-12 text-border"
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M11.42 15.17 17.25 21 21 17.25l-5.83-5.83m-3.75 3.75L6 20.5 3.5 18l5.33-5.33M15 3a6 6 0 0 0-7.3 7.3L3 15l6 6 4.7-4.7A6 6 0 0 0 15 3Z"
+                            />
+                        </svg>
+                    </div>
+
+                    {{-- Lista de tarjetas --}}
+                    <div
+                        x-show="enProceso.length > 0"
+                        class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1"
+                    >
+                        <template x-for="item in filtradas(enProceso)" :key="item.id">
+                            <div
+                                draggable="true"
+                                @dragstart="onDragStart($event, item, 'en_reparacion')"
+                                @dragend="onDragEnd($event)"
+                                class="rounded-[22px] bg-[#1e2938] border border-[#2b3a4d] p-4.5 shadow-lg hover:border-primary/50 transition-all flex flex-col justify-between gap-3.5 cursor-grab active:cursor-grabbing select-none"
                             >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M11.42 15.17 17.25 21 21 17.25l-5.83-5.83m-3.75 3.75L6 20.5 3.5 18l5.33-5.33M15 3a6 6 0 0 0-7.3 7.3L3 15l6 6 4.7-4.7A6 6 0 0 0 15 3Z"
-                                />
-                            </svg>
-                        </div>
-                    @else
-                        <div class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1">
-                            @foreach ($reparacionesEnProceso as $reparacion)
-                                @php
-                                    $clienteNombre = $reparacion->dispositivo?->cliente?->nombre ?? 'Cliente';
-                                    $marcaModelo = $reparacion->dispositivo?->marca_y_modelo ?? 'Dispositivo';
-                                    $codigo = $reparacion->codigo_seguimiento ? ('#' . $reparacion->codigo_seguimiento) : ('#' . $reparacion->id);
-                                    $searchTarget = strtolower($clienteNombre . ' ' . $marcaModelo . ' ' . $reparacion->falla_reportada . ' ' . $codigo . ' ' . $reparacion->id);
-                                @endphp
-                                <div
-                                    x-show="!search || '{{ addslashes($searchTarget) }}'.includes(search.toLowerCase())"
-                                    x-transition
-                                    class="rounded-[22px] bg-[#1e2938] border border-[#2b3a4d] p-5 shadow-lg hover:border-primary/50 transition-all flex flex-col justify-between gap-4"
-                                >
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="flex flex-col min-w-0">
-                                            <h3 class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $clienteNombre }}">
-                                                {{ $clienteNombre }}
-                                            </h3>
-                                            <span class="text-sm font-semibold text-[#6d7e93] mt-0.5">
-                                                {{ $codigo }}
-                                            </span>
-                                        </div>
-
-                                        <div class="flex flex-col items-end text-right min-w-0">
-                                            <span class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $marcaModelo }}">
-                                                {{ $marcaModelo }}
-                                            </span>
-                                            <span class="text-sm font-medium text-text-secondary mt-0.5 truncate max-w-[160px]" title="{{ $reparacion->falla_reportada }}">
-                                                {{ $reparacion->falla_reportada }}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex items-center justify-between pt-1">
-                                        <span class="text-sm italic font-medium text-[#738294]">
-                                            {{ $reparacion->tiempo_transcurrido }}
-                                        </span>
-
-                                        <button
-                                            type="button"
-                                            @click="verDetalle({{ json_encode([
-                                                'id' => $reparacion->id,
-                                                'codigo_seguimiento' => $codigo,
-                                                'cliente_nombre' => $clienteNombre,
-                                                'cliente_telefono' => $reparacion->dispositivo?->cliente?->telefono ?? 'Sin teléfono',
-                                                'cliente_email' => $reparacion->dispositivo?->cliente?->email ?? 'Sin correo',
-                                                'dispositivo_marca_modelo' => $marcaModelo,
-                                                'imei_o_serie' => $reparacion->dispositivo?->imei_o_serie ?? 'No especificado',
-                                                'clave_de_acceso' => $reparacion->clave_de_acceso ?? 'Sin clave',
-                                                'falla_reportada' => $reparacion->falla_reportada,
-                                                'costo_estimado' => $reparacion->costo_estimado ? ('$' . number_format($reparacion->costo_estimado, 0, ',', '.')) : 'Sin costo estimado',
-                                                'sena' => $reparacion->sena ? ('$' . number_format($reparacion->sena, 0, ',', '.')) : '$0',
-                                                'saldo_pendiente' => '$' . number_format($reparacion->saldo_pendiente, 0, ',', '.'),
-                                                'estado' => ucfirst($reparacion->estado ?? 'En Reparación'),
-                                                'notas_internas' => $reparacion->notas_internas ?? '',
-                                                'fecha_ingreso' => $reparacion->created_at ? $reparacion->created_at->format('d/m/Y H:i') : '-',
-                                                'tiempo_relativo' => $reparacion->tiempo_transcurrido,
-                                                'tecnico' => $reparacion->usuario?->name ?? 'No asignado'
-                                            ]) }})"
-                                            class="flex h-10 w-12 items-center justify-center rounded-2xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
-                                            title="Ver detalles de la reparación"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                {{-- Header: Código y Tiempo --}}
+                                <div class="flex items-center justify-between gap-2 text-xs">
+                                    <span class="font-bold text-[#8ba0b8] bg-[#141c25] px-2.5 py-0.5 rounded-lg border border-border/40 shrink-0" x-text="item.codigo_seguimiento"></span>
+                                    <span class="text-xs italic font-medium text-[#738294] truncate" x-text="item.tiempo_relativo"></span>
                                 </div>
-                            @endforeach
-                        </div>
-                    @endif
+
+                                {{-- Cuerpo: Cliente, Dispositivo y Falla --}}
+                                <div class="flex flex-col gap-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-white tracking-tight truncate" :title="item.cliente_nombre" x-text="item.cliente_nombre"></h3>
+                                    <div class="text-xs font-semibold text-primary-light tracking-tight truncate" :title="item.dispositivo_marca_modelo" x-text="item.dispositivo_marca_modelo"></div>
+                                    <p class="text-xs font-medium text-text-secondary truncate mt-0.5" :title="item.falla_reportada" x-text="item.falla_reportada"></p>
+                                </div>
+
+                                {{-- Footer: Botón Acción --}}
+                                <div class="flex items-center justify-end pt-1 border-t border-border/20">
+                                    <button
+                                        type="button"
+                                        @click.stop="verDetalle(item)"
+                                        class="flex h-9 w-11 items-center justify-center rounded-xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                                        title="Ver detalles de la reparación"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
 
                 </div>
 
 
 
                 {{-- =====================================
-                    LISTOS
+                    COLUMNA: LISTOS
                 ====================================== --}}
 
                 <div
-                    class="flex h-[560px] flex-col rounded-[30px] border-4 border-primary-hover bg-surface-hover p-6"
+                    class="flex h-[560px] flex-col rounded-[30px] border-4 p-6 transition-all duration-200"
+                    :class="dragOverColumn === 'listo' ? 'border-primary ring-4 ring-primary/25 bg-primary/5' : 'border-primary-hover bg-surface-hover'"
+                    @dragover.prevent="onDragOver('listo')"
+                    @dragenter.prevent="onDragOver('listo')"
+                    @dragleave="onDragLeave('listo')"
+                    @drop.prevent="onDrop('listo')"
                 >
 
                     <div class="flex items-center justify-between pb-3">
                         <h2 class="text-xl font-bold text-white tracking-wide">
                             Listos
                         </h2>
-                        <span class="flex h-7 min-w-7 items-center justify-center rounded-full bg-primary/20 px-2.5 text-xs font-bold text-primary-light border border-primary/30">
-                            {{ $reparacionesListas->count() }}
-                        </span>
+                        <span class="flex h-7 min-w-7 items-center justify-center rounded-full bg-primary/20 px-2.5 text-xs font-bold text-primary-light border border-primary/30" x-text="listas.length"></span>
                     </div>
 
-
-                    @if ($reparacionesListas->isEmpty())
-                        <div
-                            class="flex flex-1 items-center justify-center"
+                    {{-- Estado vacío --}}
+                    <div
+                        x-show="listas.length === 0"
+                        class="flex flex-1 items-center justify-center select-none pointer-events-none"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2"
+                            stroke="currentColor"
+                            class="h-12 w-12 text-primary-hover"
                         >
-                            {{-- Check --}}
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="2"
-                                stroke="currentColor"
-                                class="h-12 w-12 text-primary-hover"
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M9 12.75 11.25 15 15 9.75"
+                            />
+                            <rect
+                                width="16"
+                                height="16"
+                                x="4"
+                                y="4"
+                                rx="2"
+                            />
+                        </svg>
+                    </div>
+
+                    {{-- Lista de tarjetas --}}
+                    <div
+                        x-show="listas.length > 0"
+                        class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1"
+                    >
+                        <template x-for="item in filtradas(listas)" :key="item.id">
+                            <div
+                                draggable="true"
+                                @dragstart="onDragStart($event, item, 'listo')"
+                                @dragend="onDragEnd($event)"
+                                class="rounded-[22px] bg-[#1e2938] border border-[#2b3a4d] p-4.5 shadow-lg hover:border-primary/50 transition-all flex flex-col justify-between gap-3.5 cursor-grab active:cursor-grabbing select-none"
                             >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M9 12.75 11.25 15 15 9.75"
-                                />
-
-                                <rect
-                                    width="16"
-                                    height="16"
-                                    x="4"
-                                    y="4"
-                                    rx="2"
-                                />
-
-                            </svg>
-                        </div>
-                    @else
-                        <div class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1">
-                            @foreach ($reparacionesListas as $reparacion)
-                                @php
-                                    $clienteNombre = $reparacion->dispositivo?->cliente?->nombre ?? 'Cliente';
-                                    $marcaModelo = $reparacion->dispositivo?->marca_y_modelo ?? 'Dispositivo';
-                                    $codigo = $reparacion->codigo_seguimiento ? ('#' . $reparacion->codigo_seguimiento) : ('#' . $reparacion->id);
-                                    $searchTarget = strtolower($clienteNombre . ' ' . $marcaModelo . ' ' . $reparacion->falla_reportada . ' ' . $codigo . ' ' . $reparacion->id);
-                                @endphp
-                                <div
-                                    x-show="!search || '{{ addslashes($searchTarget) }}'.includes(search.toLowerCase())"
-                                    x-transition
-                                    class="rounded-[22px] bg-[#1e2938] border border-[#2b3a4d] p-5 shadow-lg hover:border-primary/50 transition-all flex flex-col justify-between gap-4"
-                                >
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="flex flex-col min-w-0">
-                                            <h3 class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $clienteNombre }}">
-                                                {{ $clienteNombre }}
-                                            </h3>
-                                            <span class="text-sm font-semibold text-[#6d7e93] mt-0.5">
-                                                {{ $codigo }}
-                                            </span>
-                                        </div>
-
-                                        <div class="flex flex-col items-end text-right min-w-0">
-                                            <span class="text-xl font-bold text-white tracking-tight truncate max-w-[150px]" title="{{ $marcaModelo }}">
-                                                {{ $marcaModelo }}
-                                            </span>
-                                            <span class="text-sm font-medium text-text-secondary mt-0.5 truncate max-w-[160px]" title="{{ $reparacion->falla_reportada }}">
-                                                {{ $reparacion->falla_reportada }}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex items-center justify-between pt-1">
-                                        <span class="text-sm italic font-medium text-[#738294]">
-                                            {{ $reparacion->tiempo_transcurrido }}
-                                        </span>
-
-                                        <button
-                                            type="button"
-                                            @click="verDetalle({{ json_encode([
-                                                'id' => $reparacion->id,
-                                                'codigo_seguimiento' => $codigo,
-                                                'cliente_nombre' => $clienteNombre,
-                                                'cliente_telefono' => $reparacion->dispositivo?->cliente?->telefono ?? 'Sin teléfono',
-                                                'cliente_email' => $reparacion->dispositivo?->cliente?->email ?? 'Sin correo',
-                                                'dispositivo_marca_modelo' => $marcaModelo,
-                                                'imei_o_serie' => $reparacion->dispositivo?->imei_o_serie ?? 'No especificado',
-                                                'clave_de_acceso' => $reparacion->clave_de_acceso ?? 'Sin clave',
-                                                'falla_reportada' => $reparacion->falla_reportada,
-                                                'costo_estimado' => $reparacion->costo_estimado ? ('$' . number_format($reparacion->costo_estimado, 0, ',', '.')) : 'Sin costo estimado',
-                                                'sena' => $reparacion->sena ? ('$' . number_format($reparacion->sena, 0, ',', '.')) : '$0',
-                                                'saldo_pendiente' => '$' . number_format($reparacion->saldo_pendiente, 0, ',', '.'),
-                                                'estado' => ucfirst($reparacion->estado ?? 'Listo'),
-                                                'notas_internas' => $reparacion->notas_internas ?? '',
-                                                'fecha_ingreso' => $reparacion->created_at ? $reparacion->created_at->format('d/m/Y H:i') : '-',
-                                                'tiempo_relativo' => $reparacion->tiempo_transcurrido,
-                                                'tecnico' => $reparacion->usuario?->name ?? 'No asignado'
-                                            ]) }})"
-                                            class="flex h-10 w-12 items-center justify-center rounded-2xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
-                                            title="Ver detalles de la reparación"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                {{-- Header: Código y Tiempo --}}
+                                <div class="flex items-center justify-between gap-2 text-xs">
+                                    <span class="font-bold text-[#8ba0b8] bg-[#141c25] px-2.5 py-0.5 rounded-lg border border-border/40 shrink-0" x-text="item.codigo_seguimiento"></span>
+                                    <span class="text-xs italic font-medium text-[#738294] truncate" x-text="item.tiempo_relativo"></span>
                                 </div>
-                            @endforeach
-                        </div>
-                    @endif
+
+                                {{-- Cuerpo: Cliente, Dispositivo y Falla --}}
+                                <div class="flex flex-col gap-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-white tracking-tight truncate" :title="item.cliente_nombre" x-text="item.cliente_nombre"></h3>
+                                    <div class="text-xs font-semibold text-primary-light tracking-tight truncate" :title="item.dispositivo_marca_modelo" x-text="item.dispositivo_marca_modelo"></div>
+                                    <p class="text-xs font-medium text-text-secondary truncate mt-0.5" :title="item.falla_reportada" x-text="item.falla_reportada"></p>
+                                </div>
+
+                                {{-- Footer: Botón Acción --}}
+                                <div class="flex items-center justify-end pt-1 border-t border-border/20">
+                                    <button
+                                        type="button"
+                                        @click.stop="verDetalle(item)"
+                                        class="flex h-9 w-11 items-center justify-center rounded-xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                                        title="Ver detalles de la reparación"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
 
                 </div>
 
             </div>
+
+        </div> </div>
 
         </div>
 
@@ -872,6 +929,134 @@
                         class="h-11 rounded-xl bg-surface-hover hover:bg-[#364252] px-6 text-sm font-bold text-white transition-all cursor-pointer"
                     >
                         Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- =========================================
+            MODAL CONFIRMACIÓN DE CAMBIO DE ESTADO (Drag & Drop)
+        ========================================== --}}
+        <div
+            x-show="openConfirmModal"
+            x-cloak
+            @keydown.escape.window="if (!isUpdating) cancelarCambio()"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+        >
+            {{-- Backdrop --}}
+            <div
+                x-show="openConfirmModal"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                @click="if (!isUpdating) cancelarCambio()"
+                class="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            ></div>
+
+            {{-- Modal Box --}}
+            <div
+                x-show="openConfirmModal"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                class="relative z-10 w-full max-w-lg rounded-3xl bg-[#141c25] p-6 sm:p-7 shadow-2xl border border-border/40 my-auto"
+            >
+                {{-- Icono & Título --}}
+                <div class="flex items-center gap-4 pb-4 border-b border-border/30">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 text-primary shrink-0 border border-primary/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg sm:text-xl font-bold text-white tracking-wide">
+                            ¿Confirmar cambio de estado?
+                        </h3>
+                        <p class="text-xs text-text-secondary mt-0.5">
+                            La reparación cambiará su posición en el tablero de trabajo.
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Contenido: Tarjeta a mover & Indicador de columnas --}}
+                <div class="py-5 flex flex-col gap-4">
+                    
+                    {{-- Preview de la reparación --}}
+                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30 flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-primary-light bg-primary/10 px-2.5 py-0.5 rounded-lg border border-primary/20" x-text="pendingMove?.item?.codigo_seguimiento"></span>
+                            <span class="text-xs italic text-text-disabled" x-text="pendingMove?.item?.tiempo_relativo"></span>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-bold text-white truncate" x-text="pendingMove?.item?.cliente_nombre"></span>
+                            <span class="text-xs font-semibold text-primary-light truncate max-w-[180px]" x-text="pendingMove?.item?.dispositivo_marca_modelo"></span>
+                        </div>
+                    </div>
+
+                    {{-- Transición de estados: De -> Hacia --}}
+                    <div class="flex items-center justify-center gap-3 bg-[#1c2530]/60 p-3.5 rounded-2xl border border-border/20">
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="px-3.5 py-1 rounded-xl text-xs font-bold uppercase tracking-wider"
+                                :class="{
+                                    'bg-[#0081cc]/20 text-[#33b4ff] border border-[#0081cc]/40': pendingMove?.from === 'recibido',
+                                    'bg-warning/20 text-warning border border-warning/40': pendingMove?.from === 'en_reparacion',
+                                    'bg-success/20 text-success border border-success/40': pendingMove?.from === 'listo'
+                                }"
+                                x-text="columnaLabel(pendingMove?.from)"
+                            ></span>
+                        </div>
+
+                        {{-- Flecha --}}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-text-disabled animate-pulse">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                        </svg>
+
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="px-3.5 py-1 rounded-xl text-xs font-bold uppercase tracking-wider"
+                                :class="{
+                                    'bg-[#0081cc]/20 text-[#33b4ff] border border-[#0081cc]/40': pendingMove?.to === 'recibido',
+                                    'bg-warning/20 text-warning border border-warning/40': pendingMove?.to === 'en_reparacion',
+                                    'bg-success/20 text-success border border-success/40': pendingMove?.to === 'listo'
+                                }"
+                                x-text="columnaLabel(pendingMove?.to)"
+                            ></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                {{-- Botones de Acción --}}
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-border/30">
+                    <button
+                        type="button"
+                        :disabled="isUpdating"
+                        @click="cancelarCambio()"
+                        class="px-5 py-2.5 rounded-xl bg-surface-hover hover:bg-[#364252] text-sm font-bold text-white transition-all cursor-pointer disabled:opacity-50"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        type="button"
+                        :disabled="isUpdating"
+                        @click="confirmarCambio()"
+                        class="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover active:scale-[0.98] text-sm font-bold text-white transition-all shadow-md cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                    >
+                        <svg x-show="isUpdating" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span x-text="isUpdating ? 'Actualizando...' : 'Confirmar Cambio'"></span>
                     </button>
                 </div>
             </div>

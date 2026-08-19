@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\FormateaFechaArgentina;
 
 class Reparacion extends Model
 {
+    use FormateaFechaArgentina;
+
     public function usuario()
     {
         return $this->belongsTo(User::class, 'users_id');
@@ -28,10 +31,7 @@ class Reparacion extends Model
 
     public function getTiempoTranscurridoAttribute(): string
     {
-        if (!$this->created_at) {
-            return 'Ingreso recientemente';
-        }
-        return 'Ingreso ' . $this->created_at->locale('es')->diffForHumans();
+        return $this->tiempoTranscurridoArgentina($this->created_at);
     }
 
     public function getSaldoPendienteAttribute(): float
