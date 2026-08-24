@@ -551,7 +551,7 @@
                                     name="nombre"
                                     value="{{ old('nombre') }}"
                                     placeholder="Nombre"
-                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
+                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
                                 >
                                 @error('nombre')
                                     <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
@@ -565,7 +565,7 @@
                                     name="telefono"
                                     value="{{ old('telefono') }}"
                                     placeholder="Telefono"
-                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
+                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
                                 >
                                 @error('telefono')
                                     <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
@@ -579,7 +579,7 @@
                                     name="email"
                                     value="{{ old('email') }}"
                                     placeholder="Email"
-                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
+                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
                                 >
                                 @error('email')
                                     <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
@@ -595,7 +595,7 @@
                                     name="falla_reportada"
                                     rows="2"
                                     placeholder="Detalle de la falla"
-                                    class="w-full rounded-xl bg-[#6f7b8c] p-3 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner resize-none"
+                                    class="w-full rounded-xl bg-[#1c2530] p-3 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner resize-none"
                                 >{{ old('falla_reportada') }}</textarea>
                                 @error('falla_reportada')
                                     <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
@@ -613,7 +613,7 @@
                                     name="sena"
                                     value="{{ old('sena') }}"
                                     placeholder="$$$"
-                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
+                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
                                 >
                                 @error('sena')
                                     <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
@@ -642,7 +642,7 @@
                                     name="marca_y_modelo"
                                     value="{{ old('marca_y_modelo') }}"
                                     placeholder="Marca y modelo"
-                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
+                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
                                 >
                                 @error('marca_y_modelo')
                                     <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
@@ -658,7 +658,7 @@
                                     <div class="relative w-2/3">
                                         <select
                                             name="clave_de_acceso"
-                                            class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 pr-10 text-sm font-semibold text-white outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner appearance-none cursor-pointer"
+                                            class="h-10 sm:h-11 w-full rounded-xl bg-[#1c2530] px-4 pr-10 text-sm font-semibold text-white outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner appearance-none cursor-pointer"
                                         >
                                             <option value="Sin clave" {{ old('clave_de_acceso') == 'Sin clave' ? 'selected' : '' }}>Sin clave</option>
                                             <option value="PIN / Contraseña" {{ old('clave_de_acceso') == 'PIN / Contraseña' ? 'selected' : '' }}>PIN / Contraseña</option>
@@ -674,7 +674,7 @@
                                     @error('clave_de_acceso')
                                         <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
                                     @enderror
-                                    <button class="w-1/3 h-10 sm:h-11 rounded-xl bg-[#6f7b8c] px-4 text-sm font-semibold text-white outline-none border border-transparent cursor-pointer flex items-center justify-center"> 
+                                    <button class="w-1/3 h-10 sm:h-11 rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white outline-none border border-transparent cursor-pointer flex items-center justify-center"> 
                                         Guardar
                                     </button>
                                 </div>
@@ -690,7 +690,7 @@
                                     name="imei_o_serie"
                                     value="{{ old('imei_o_serie') }}"
                                     placeholder="IMEI/Nº Serie"
-                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
+                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
                                 >
                                 @error('imei_o_serie')
                                     <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
@@ -708,7 +708,7 @@
                                     name="costo_estimado"
                                     value="{{ old('costo_estimado') }}"
                                     placeholder="$$$"
-                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#6f7b8c] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
+                                    class="h-10 sm:h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
                                 >
                                 @error('costo_estimado')
                                     <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
