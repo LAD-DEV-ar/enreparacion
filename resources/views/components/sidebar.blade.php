@@ -101,22 +101,20 @@
                 class="mt-3 flex h-16 items-center gap-4 rounded-2xl px-5 {{ request()->routeIs('reparaciones.*') ? 'bg-surface-hover' : 'transition-colors hover:bg-surface-hover' }}"
             >
 
-                <span class="flex size-8 shrink-0 items-center justify-center text-primary">
+                <span class="flex size-8 shrink-0 items-center justify-center overflow-visible text-primary">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke-width="2"
                         stroke="currentColor"
-                        class="size-full"
+                        class="size-full overflow-visible"
                     >
-                        <g transform="translate(12 12) scale(1.28) translate(-12 -12)">
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 1 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
-                            />
-                        </g>
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M7 10h3V7L6.5 3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1-3 3l-6-6a6 6 0 0 1-8-8L7 10Z"
+                        />
                     </svg>
                 </span>
 
@@ -136,8 +134,8 @@
         <div class="px-8 pb-10">
 
             <a
-                href="#"
-                class="flex items-center gap-3 rounded-2xl transition-colors hover:bg-surface-hover"
+                href="{{ route('cuenta.index') }}"
+                class="flex items-center gap-3 rounded-2xl {{ request()->routeIs('cuenta.*') ? 'bg-surface-hover' : 'transition-colors hover:bg-surface-hover' }}"
             >
 
                 <div

@@ -35,4 +35,5 @@ Route::post('/verificar-email/reenviar', [VerificarEmailController::class, 'rese
 
 Route::get('/reparaciones', [ReparacionesController::class, 'index'])->name('reparaciones.index')->middleware(['auth', 'negocios_id']);
 Route::get('/clientes', [ClientesController::class, 'index'])->name('clientes.index')->middleware(['auth', 'negocios_id']);
+Route::post('/clientes', [ClientesController::class, 'store'])->name('clientes.store')->middleware(['auth', 'negocios_id']);
 Route::get('/cuenta/configuracion', [CuentaController::class, 'index'])->name('cuenta.index')->middleware(['auth', 'negocios_id']);
