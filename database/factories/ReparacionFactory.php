@@ -24,8 +24,7 @@ class ReparacionFactory extends Factory
     ];
 
     private static array $estados = [
-        'recibido', 'en_diagnostico', 'esperando_repuesto',
-        'en_reparacion', 'listo', 'entregado',
+        'recibido', 'en_reparacion', 'listo', 'entregado',
     ];
 
     /**
