@@ -9,9 +9,11 @@ use App\Models\Reparacion;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
+use App\Traits\GeneraCodigoReparacion;
 
 class NegocioSeeder extends Seeder
 {
+    use GeneraCodigoReparacion;
     /**
      * Cantidad de negocios de prueba a crear.
      * Cada negocio tendrá sus propios usuarios, clientes, dispositivos y reparaciones.
@@ -72,13 +74,14 @@ class NegocioSeeder extends Seeder
         $clientes = Cliente::factory(self::CLIENTES_POR_NEGOCIO)
             ->paraNegocio($negocio)
             ->create();
-
+        
         foreach ($clientes as $cliente) {
             // Cada cliente tiene entre 1 y N dispositivos
             $cantDisp = rand(1, self::DISPOSITIVOS_POR_CLIENTE);
             $dispositivos = Dispositivo::factory($cantDisp)
                 ->paraCliente($cliente)
                 ->create();
+            $nombreCliente = $cliente->nombre;
 
             foreach ($dispositivos as $dispositivo) {
                 // Cada dispositivo puede tener entre 1 y N reparaciones
@@ -92,7 +95,7 @@ class NegocioSeeder extends Seeder
                         ->paraContexto($negocio, $dispositivo, $tecnico)
                         ->create([
                             // Código de seguimiento único de 10 chars alfanumérico en mayúsculas
-                            'codigo_seguimiento' => strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 10)),
+                            'codigo_seguimiento' => $this->generarCodigoSeguimiento($nombreCliente),
                         ]);
                 }
             }
