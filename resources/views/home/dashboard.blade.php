@@ -5,7 +5,9 @@
         openModal: {{ $errors->any() ? 'true' : 'false' }},
         openDetailModal: false,
         openConfirmModal: false,
+        openConfirmEntregaModal: false,
         isUpdating: false,
+        isEntrega: false,
         search: '',
         selectedReparacion: null,
         draggedItem: null,
@@ -32,6 +34,11 @@
         verDetalle(item) {
             this.selectedReparacion = item;
             this.openDetailModal = true;
+        },
+
+        detallesDeEntrega(item){
+            this.selectedReparacion = item;
+            this.openConfirmEntregaModal = true;
         },
 
         onDragStart(e, item, fromColumn) {
@@ -83,6 +90,65 @@
             this.pendingMove = null;
             this.draggedItem = null;
             this.dragOverColumn = null;
+        },
+
+        cancelarEntrega(){
+            this.openConfirmEntregaModal = false;
+        },
+
+        async confirmarEntrega(){
+            if (!this.selectedReparacion || this.isEntrega) return;
+
+            this.isEntrega = true;
+            const item = this.selectedReparacion;
+
+            try {
+                const url = `{{ url('/dashboard/reparaciones') }}/${item.id}/estado`;
+                const response = await fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ estado: 'entregado' })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    this.recibidas = this.recibidas.filter(r => r.id !== item.id);
+                    this.enProceso = this.enProceso.filter(r => r.id !== item.id);
+                    this.listas = this.listas.filter(r => r.id !== item.id);
+
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: {
+                            message: data.message || 'Reparación marcada como entregada.',
+                            type: 'success'
+                        }
+                    }));
+
+                    this.openConfirmEntregaModal = false;
+                    this.selectedReparacion = null;
+                } else {
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: {
+                            message: data.message || 'Error al confirmar la entrega.',
+                            type: 'error'
+                        }
+                    }));
+                }
+            } catch (error) {
+                console.error('Error al confirmar entrega:', error);
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: {
+                        message: 'Hubo un error de conexión al confirmar la entrega.',
+                        type: 'error'
+                    }
+                }));
+            } finally {
+                this.isEntrega = false;
+            }
         },
 
         async confirmarCambio() {
@@ -334,12 +400,12 @@
                             viewBox="0 0 24 24"
                             stroke-width="2"
                             stroke="currentColor"
-                            class="h-12 w-12 text-border"
+                            class="h-12 w-12 text-border""
                         >
                             <path
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
-                                d="M11.42 15.17 17.25 21 21 17.25l-5.83-5.83m-3.75 3.75L6 20.5 3.5 18l5.33-5.33M15 3a6 6 0 0 0-7.3 7.3L3 15l6 6 4.7-4.7A6 6 0 0 0 15 3Z"
+                                d="M7 10h3V7L6.5 3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1-3 3l-6-6a6 6 0 0 1-8-8L7 10Z"
                             />
                         </svg>
                     </div>
@@ -465,7 +531,7 @@
                                 </div>
 
                                 {{-- Footer: Botón Acción --}}
-                                <div class="flex items-center justify-end pt-1 border-t border-border/20">
+                                <div class="flex gap-2 items-center justify-end pt-1 border-t border-border/20">
                                     <button
                                         type="button"
                                         @click.stop="verDetalle(item)"
@@ -476,6 +542,15 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                         </svg>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        @click.stop="detallesDeEntrega(item)"
+                                        class="flex h-9 w-auto p-2 items-center justify-center rounded-xl bg-success/50 text-white shadow-md hover:bg-success/70 active:scale-95 transition-all cursor-pointer"
+                                        title="Ver detalles de la reparación"
+                                    >
+                                        <span class="text-sm font-bold tracking-wide uppercase text-text-primary">Entregar</span>
                                     </button>
                                 </div>
                             </div>
@@ -1057,6 +1132,101 @@
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
                         <span x-text="isUpdating ? 'Actualizando...' : 'Confirmar Cambio'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- =========================================
+            MODAL CONFIRMACIÓN DE CAMBIO DE ESTADO (Drag & Drop)
+        ========================================== --}}
+        <div
+            x-show="openConfirmEntregaModal"
+            x-cloak
+            @keydown.escape.window="if (!isEntrega) cancelarEntrega()"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+        >
+            {{-- Backdrop --}}
+            <div
+                x-show="openConfirmEntregaModal"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                @click="if (!isEntrega) cancelarEntrega()"
+                class="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            ></div>
+
+            {{-- Modal Box --}}
+            <div
+                x-show="openConfirmEntregaModal"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                class="relative z-10 w-full max-w-lg rounded-3xl bg-[#141c25] p-6 sm:p-7 shadow-2xl border border-border/40 my-auto"
+            >
+                {{-- Icono & Título --}}
+                <div class="flex items-center gap-4 pb-4 border-b border-border/30">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-success/20 text-success shrink-0 border border-success/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75 9 17.25 19.5 6.75" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg sm:text-xl font-bold text-white tracking-wide">
+                            ¿Confirmar cambio de estado?
+                        </h3>
+                        <p class="text-xs text-text-secondary mt-0.5">
+                            La reparación cambiará su posición en el tablero de trabajo.
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Contenido: Tarjeta a mover & Indicador de columnas --}}
+                <div class="py-5 flex flex-col gap-4">
+                    
+                    {{-- Preview de la reparación --}}
+                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30 flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-primary-light bg-success/10 px-2.5 py-0.5 rounded-lg border border-success/20" x-text="selectedReparacion?.codigo_seguimiento"></span>
+                            <span class="text-xs italic text-text-disabled" x-text="selectedReparacion?.tiempo_relativo"></span>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-bold text-white truncate" x-text="selectedReparacion?.cliente_nombre"></span>
+                            <span class="text-xs font-semibold text-primary-light truncate max-w-[180px]" x-text="selectedReparacion?.dispositivo_marca_modelo"></span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Botones de Acción --}}
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-border/30">
+                    <button
+                        type="button"
+                        :disabled="isEntrega"
+                        @click="cancelarEntrega()"
+                        class="px-5 py-2.5 rounded-xl bg-surface-hover hover:bg-[#364252] text-sm font-bold text-white transition-all cursor-pointer disabled:opacity-50"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        type="button"
+                        :disabled="isEntrega"
+                        @click="confirmarEntrega()"
+                        class="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover active:scale-[0.98] text-sm font-bold text-white transition-all shadow-md cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                    >
+                        <svg x-show="isEntrega" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span x-text="isEntrega ? 'Actualizando...' : 'Confirmar Cambio'"></span>
                     </button>
                 </div>
             </div>

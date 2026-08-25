@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\FormateaFechaArgentina;
 
 class Reparacion extends Model
 {
-    use FormateaFechaArgentina;
+    use HasFactory, FormateaFechaArgentina;
+
 
     public function usuario()
     {

@@ -166,7 +166,7 @@ class DashboardController extends Controller
         }
 
         $validated = $request->validate([
-            'estado' => ['required', 'string', 'in:recibido,en_reparacion,listo'],
+            'estado' => ['required', 'string', 'in:recibido,en_reparacion,listo,entregado'],
         ]);
 
         $reparacion->estado = $validated['estado'];
@@ -175,7 +175,8 @@ class DashboardController extends Controller
         $labels = [
             'recibido' => 'Recibidos',
             'en_reparacion' => 'En Reparación',
-            'listo' => 'Listos'
+            'listo' => 'Listos',
+            'entregado' => 'Entregado'
         ];
 
         return response()->json([

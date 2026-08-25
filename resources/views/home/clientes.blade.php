@@ -138,7 +138,7 @@
                         <div class="relative z-10 flex items-center gap-4.5 min-w-0 md:w-5/12 lg:w-4/12">
                             {{-- Círculo Avatar con Iniciales --}}
                             <div
-                                class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1a3854] to-[#122538] border border-primary/30 text-primary-light font-bold text-lg tracking-wider shadow-inner group-hover:scale-105 group-hover:border-primary/60 transition-transform duration-200"
+                                class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/20 border border-primary/30 text-primary-light font-bold text-lg tracking-wider shadow-inner group-hover:scale-105 group-hover:border-primary/60 transition-transform duration-200"
                                 x-text="cliente.iniciales"
                             ></div>
 
@@ -171,9 +171,20 @@
 
                             {{-- Métrica 1: Reparaciones Totales --}}
                             <div class="flex items-center gap-2 rounded-xl bg-[#141c25]/80 px-3.5 py-2 border border-border/30">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-text-disabled">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21 21 17.25l-5.83-5.83m-3.75 3.75L6 20.5 3.5 18l5.33-5.33M15 3a6 6 0 0 0-7.3 7.3L3 15l6 6 4.7-4.7A6 6 0 0 0 15 3Z" />
-                                </svg>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                                stroke="currentColor"
+                                class="h-4 w-5 text-text-disabled"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M7 10h3V7L6.5 3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1-3 3l-6-6a6 6 0 0 1-8-8L7 10Z"
+                                />
+                            </svg>
                                 <span class="text-xs sm:text-sm font-semibold text-text-secondary" x-text="cliente.total_reparaciones_label"></span>
                             </div>
 
@@ -344,7 +355,7 @@
                             {{-- Info Principal del Cliente --}}
                             <div class="flex items-center gap-4.5">
                                 <div
-                                    class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1a3854] to-[#122538] border-2 border-primary/40 text-primary-light font-bold text-2xl tracking-wider shadow-md"
+                                    class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/20 border-2 border-primary/40 text-primary-light font-bold text-2xl tracking-wider shadow-md"
                                     x-text="selectedCliente.iniciales"
                                 ></div>
 
