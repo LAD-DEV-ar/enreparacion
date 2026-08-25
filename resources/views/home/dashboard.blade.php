@@ -323,9 +323,13 @@
                     </div>
 
                     {{-- Lista de tarjetas --}}
-                    <div
+                    <x-scrollbar
                         x-show="recibidas.length > 0"
-                        class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1"
+                        class="flex flex-1 flex-col gap-4"
+                        variant="dark"
+                        size="sm"
+                        :rounded="true"
+                        :hover="true"
                     >
                         <template x-for="item in filtradas(recibidas)" :key="item.id">
                             <div
@@ -363,7 +367,7 @@
                                 </div>
                             </div>
                         </template>
-                    </div>
+                    </x-scrollbar>
 
                 </div>
 
@@ -411,9 +415,13 @@
                     </div>
 
                     {{-- Lista de tarjetas --}}
-                    <div
+                    <x-scrollbar
                         x-show="enProceso.length > 0"
-                        class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1"
+                        class="flex flex-1 flex-col gap-4"
+                        variant="dark"
+                        size="sm"
+                        :rounded="true"
+                        :hover="true"
                     >
                         <template x-for="item in filtradas(enProceso)" :key="item.id">
                             <div
@@ -451,7 +459,7 @@
                                 </div>
                             </div>
                         </template>
-                    </div>
+                    </x-scrollbar>
 
                 </div>
 
@@ -506,9 +514,13 @@
                     </div>
 
                     {{-- Lista de tarjetas --}}
-                    <div
+                    <x-scrollbar
                         x-show="listas.length > 0"
-                        class="flex flex-1 flex-col gap-4 overflow-y-auto pr-1"
+                        class="flex flex-1 flex-col gap-4"
+                        variant="primary"
+                        size="sm"
+                        :rounded="true"
+                        :hover="true"
                     >
                         <template x-for="item in filtradas(listas)" :key="item.id">
                             <div
@@ -555,7 +567,7 @@
                                 </div>
                             </div>
                         </template>
-                    </div>
+                    </x-scrollbar>
 
                 </div>
 
@@ -1181,10 +1193,10 @@
                     </div>
                     <div>
                         <h3 class="text-lg sm:text-xl font-bold text-white tracking-wide">
-                            ¿Confirmar cambio de estado?
+                            ¿Confirmar entrega del equipo?
                         </h3>
                         <p class="text-xs text-text-secondary mt-0.5">
-                            La reparación cambiará su posición en el tablero de trabajo.
+                            La reparación cambiará su estado a entregado.
                         </p>
                     </div>
                 </div>
@@ -1195,7 +1207,7 @@
                     {{-- Preview de la reparación --}}
                     <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30 flex flex-col gap-2">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-primary-light bg-success/10 px-2.5 py-0.5 rounded-lg border border-success/20" x-text="selectedReparacion?.codigo_seguimiento"></span>
+                            <span class="text-xs font-semibold text-success bg-success/20 px-2.5 py-0.5 rounded-lg border border-success/20" x-text="selectedReparacion?.codigo_seguimiento"></span>
                             <span class="text-xs italic text-text-disabled" x-text="selectedReparacion?.tiempo_relativo"></span>
                         </div>
                         <div class="flex items-center justify-between gap-2">

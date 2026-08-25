@@ -115,3 +115,95 @@ input[type="search"]::-ms-reveal {
   width: 0;
   height: 0;
 }
+
+/* ========================================
+   CUSTOM SCROLLBAR COMPONENT
+   ======================================== */
+
+/* ── Base ── */
+.custom-scrollbar {
+    scrollbar-color: transparent transparent;
+    scrollbar-gutter: stable;
+    transition: scrollbar-color 0.25s ease;
+}
+
+/* ── Sizes ── */
+.scrollbar-xs { scrollbar-width: 2px; }
+.scrollbar-sm { scrollbar-width: 4px; }
+.scrollbar-md { scrollbar-width: 8px; }
+.scrollbar-lg { scrollbar-width: 12px; }
+
+/* ── Webkit (Chrome / Safari / Edge) ── */
+.custom-scrollbar::-webkit-scrollbar {
+    background: transparent;
+}
+.scrollbar-xs::-webkit-scrollbar { width: 2px;  height: 2px; }
+.scrollbar-sm::-webkit-scrollbar { width: 4px;  height: 4px; }
+.scrollbar-md::-webkit-scrollbar { width: 8px;  height: 8px; }
+.scrollbar-lg::-webkit-scrollbar { width: 12px; height: 12px; }
+
+/* ── Track ── */
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ── Thumb colors ── */
+/* dark */
+.scrollbar-dark { scrollbar-color: #364252 transparent; }
+.scrollbar-dark::-webkit-scrollbar-thumb {
+    background-color: #364252;
+}
+.scrollbar-dark::-webkit-scrollbar-thumb:hover {
+    background-color: #4a5a6e;
+}
+/* light */
+.scrollbar-light { scrollbar-color: rgba(255,255,255,0.20) transparent; }
+.scrollbar-light::-webkit-scrollbar-thumb {
+    background-color: rgba(255,255,255,0.20);
+}
+.scrollbar-light::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255,255,255,0.38);
+}
+/* primary */
+.scrollbar-primary { scrollbar-color: #0081cc transparent; }
+.scrollbar-primary::-webkit-scrollbar-thumb {
+    background-color: #0081cc;
+}
+.scrollbar-primary::-webkit-scrollbar-thumb:hover {
+    background-color: #33b4ff;
+}
+
+/* ── Rounded thumb ── */
+.scrollbar-rounded::-webkit-scrollbar-thumb {
+    border-radius: 99px;
+}
+
+/* ── Hover-only mode: thumb is invisible until the container is hovered ── */
+.scrollbar-hover {
+    scrollbar-color: transparent transparent;
+}
+.scrollbar-hover::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    transition: background-color 0.25s ease;
+}
+/* dark hover-only */
+.scrollbar-hover.scrollbar-dark:hover {
+    scrollbar-color: #364252 transparent;
+}
+.scrollbar-hover.scrollbar-dark:hover::-webkit-scrollbar-thumb {
+    background-color: #364252;
+}
+/* light hover-only */
+.scrollbar-hover.scrollbar-light:hover {
+    scrollbar-color: rgba(255,255,255,0.20) transparent;
+}
+.scrollbar-hover.scrollbar-light:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(255,255,255,0.20);
+}
+/* primary hover-only */
+.scrollbar-hover.scrollbar-primary:hover {
+    scrollbar-color: #0081cc transparent;
+}
+.scrollbar-hover.scrollbar-primary:hover::-webkit-scrollbar-thumb {
+    background-color: #0081cc;
+}
