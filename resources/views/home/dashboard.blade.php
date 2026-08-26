@@ -675,10 +675,11 @@
 
                             {{-- Falla reportada --}}
                             <div>
-                                <label class="block text-sm sm:text-base font-bold text-white mb-1">
+                                <label for="falla_reportada" class="block text-sm sm:text-base font-bold text-white mb-1">
                                     Falla reportada:
                                 </label>
                                 <textarea
+                                    id="falla_reportada"
                                     name="falla_reportada"
                                     rows="2"
                                     placeholder="Detalle de la falla"
@@ -691,13 +692,14 @@
 
                             {{-- Seña del cliente --}}
                             <div>
-                                <label class="block text-sm sm:text-base font-bold text-white mb-1">
+                                <label for="sena" class="block text-sm sm:text-base font-bold text-white mb-1">
                                     Seña del cliente:
                                 </label>
                                 <input
                                     type="number"
                                     step="any"
                                     name="sena"
+                                    id="sena"
                                     value="{{ old('sena') }}"
                                     placeholder="$$$"
                                     class="h-10 sm:h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
@@ -761,7 +763,7 @@
                                     @error('clave_de_acceso')
                                         <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
                                     @enderror
-                                    <button class="w-1/3 h-10 sm:h-11 rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white outline-none border border-transparent cursor-pointer flex items-center justify-center"> 
+                                    <button class="w-1/3 h-10 sm:h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-text-primary outline-none border border-transparent cursor-pointer flex items-center justify-center"> 
                                         Guardar
                                     </button>
                                 </div>
@@ -769,12 +771,13 @@
 
                             {{-- IMEI / Nº Serie --}}
                             <div>
-                                <label class="block text-sm sm:text-base font-bold text-white mb-1">
+                                <label for="imei_o_serie" class="block text-sm sm:text-base font-bold text-white mb-1">
                                     IMEI/Nº Serie:
                                 </label>
                                 <input
                                     type="text"
                                     name="imei_o_serie"
+                                    id="imei_o_serie"
                                     value="{{ old('imei_o_serie') }}"
                                     placeholder="IMEI/Nº Serie"
                                     class="h-10 sm:h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
@@ -786,13 +789,14 @@
 
                             {{-- Costo Estimado --}}
                             <div>
-                                <label class="block text-sm sm:text-base font-bold text-white mb-1">
+                                <label for="costo_estimado" class="block text-sm sm:text-base font-bold text-white mb-1">
                                     Valor:
                                 </label>
                                 <input
                                     type="number"
                                     step="any"
                                     name="costo_estimado"
+                                    id="costo_estimado"
                                     value="{{ old('costo_estimado') }}"
                                     placeholder="$$$"
                                     class="h-10 sm:h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-gray-300/80 outline-none border border-transparent focus:border-[#0081cc] focus:bg-[#5b6777] focus:ring-1 focus:ring-[#0081cc]/30 transition-all shadow-inner"
