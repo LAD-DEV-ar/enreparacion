@@ -16,9 +16,10 @@ class IfHaveNegociosIdSendToDashboard
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if (!empty($user->negocios_id)){
+        if (! empty($user->negocios_id)) {
             return redirect()->route('dashboard.index');
         }
+
         return $next($request);
     }
 }

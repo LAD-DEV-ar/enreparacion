@@ -17,11 +17,10 @@ trait FormateaFechaArgentina
      * configurada en la zona horaria de Argentina y en idioma español.
      *
      * @param  DateTimeInterface|string|null  $fecha
-     * @return Carbon|null
      */
     public function aCarbonArgentina($fecha = null): ?Carbon
     {
-        if (!$fecha) {
+        if (! $fecha) {
             return null;
         }
 
@@ -45,9 +44,6 @@ trait FormateaFechaArgentina
      * Ejemplo: '19/08/2026 13:45'
      *
      * @param  DateTimeInterface|string|null  $fecha
-     * @param  string  $formato
-     * @param  string  $default
-     * @return string
      */
     public function formatearFechaHoraArgentina($fecha, string $formato = 'd/m/Y H:i', string $default = '-'): string
     {
@@ -61,9 +57,6 @@ trait FormateaFechaArgentina
      * Ejemplo: '19/08/2026'
      *
      * @param  DateTimeInterface|string|null  $fecha
-     * @param  string  $formato
-     * @param  string  $default
-     * @return string
      */
     public function formatearSoloFechaArgentina($fecha, string $formato = 'd/m/Y', string $default = '-'): string
     {
@@ -75,9 +68,6 @@ trait FormateaFechaArgentina
      * Ejemplo: '13:45'
      *
      * @param  DateTimeInterface|string|null  $fecha
-     * @param  string  $formato
-     * @param  string  $default
-     * @return string
      */
     public function formatearHoraArgentina($fecha, string $formato = 'H:i', string $default = '-'): string
     {
@@ -89,19 +79,16 @@ trait FormateaFechaArgentina
      * Ejemplo: 'Ingreso hace 2 horas', 'hace 5 minutos'
      *
      * @param  DateTimeInterface|string|null  $fecha
-     * @param  string  $prefijo
-     * @param  string  $default
-     * @return string
      */
     public function tiempoTranscurridoArgentina($fecha, string $prefijo = 'Ingreso ', string $default = 'Ingreso recientemente'): string
     {
         $carbon = $this->aCarbonArgentina($fecha);
 
-        if (!$carbon) {
+        if (! $carbon) {
             return $default;
         }
 
-        return $prefijo . $carbon->diffForHumans();
+        return $prefijo.$carbon->diffForHumans();
     }
 
     /**
@@ -109,14 +96,12 @@ trait FormateaFechaArgentina
      * Ejemplo: '19 de agosto de 2026, 13:45 hs'
      *
      * @param  DateTimeInterface|string|null  $fecha
-     * @param  string  $default
-     * @return string
      */
     public function formatearFechaHumanaArgentina($fecha, string $default = '-'): string
     {
         $carbon = $this->aCarbonArgentina($fecha);
 
-        if (!$carbon) {
+        if (! $carbon) {
             return $default;
         }
 

@@ -16,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'negocios_id' => CheckIfHaveNegociosId::class,
-            'have_negocios_id' => IfHaveNegociosIdSendToDashboard::class
+            'have_negocios_id' => IfHaveNegociosIdSendToDashboard::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

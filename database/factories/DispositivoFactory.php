@@ -3,10 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\Cliente;
+use App\Models\Dispositivo;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<\App\Models\Dispositivo>
+ * @extends Factory<Dispositivo>
  */
 class DispositivoFactory extends Factory
 {
@@ -31,9 +32,9 @@ class DispositivoFactory extends Factory
     public function definition(): array
     {
         return [
-            'clientes_id'   => Cliente::factory(),
+            'clientes_id' => Cliente::factory(),
             'marca_y_modelo' => fake()->randomElement(self::$marcasModelos),
-            'imei_o_serie'   => fake()->boolean(70)
+            'imei_o_serie' => fake()->boolean(70)
                 ? fake()->numerify('##############') // IMEI de 14 dígitos
                 : null,
         ];

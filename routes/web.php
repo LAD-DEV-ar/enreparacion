@@ -34,6 +34,9 @@ Route::post('/verificar-email', [VerificarEmailController::class, 'store'])->nam
 Route::post('/verificar-email/reenviar', [VerificarEmailController::class, 'resend'])->name('verificar-email.resend');
 
 Route::get('/reparaciones', [ReparacionesController::class, 'index'])->name('reparaciones.index')->middleware(['auth', 'negocios_id']);
+Route::post('/reparaciones', [ReparacionesController::class, 'store'])->name('reparaciones.store')->middleware(['auth', 'negocios_id']);
+Route::patch('/reparaciones/{reparacion}/estado', [ReparacionesController::class, 'updateEstado'])->name('reparaciones.update-estado')->middleware(['auth', 'negocios_id']);
+Route::patch('/reparaciones/{reparacion}/notas', [ReparacionesController::class, 'updateNotas'])->name('reparaciones.update-notas')->middleware(['auth', 'negocios_id']);
 Route::get('/clientes', [ClientesController::class, 'index'])->name('clientes.index')->middleware(['auth', 'negocios_id']);
 Route::post('/clientes', [ClientesController::class, 'store'])->name('clientes.store')->middleware(['auth', 'negocios_id']);
 Route::get('/cuenta/configuracion', [CuentaController::class, 'index'])->name('cuenta.index')->middleware(['auth', 'negocios_id']);

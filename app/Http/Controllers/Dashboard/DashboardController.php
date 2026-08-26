@@ -7,16 +7,16 @@ use App\Models\Cliente;
 use App\Models\Dispositivo;
 use App\Models\Reparacion;
 use App\Models\User;
+use App\Traits\FormateaFechaArgentina;
+use App\Traits\GeneraCodigoReparacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Traits\GeneraCodigoReparacion;
-use App\Traits\FormateaFechaArgentina;
 
 class DashboardController extends Controller
 {
-    use GeneraCodigoReparacion, FormateaFechaArgentina;
-    
+    use FormateaFechaArgentina, GeneraCodigoReparacion;
+
     public function index()
     {
         $user = auth()->user();
@@ -25,16 +25,16 @@ class DashboardController extends Controller
         $reparaciones = Reparacion::with([
             'dispositivo.cliente',
             'usuario',
-            'negocio'
+            'negocio',
         ])
-        ->where('negocios_id', $user->negocios_id)
-        ->latest()
-        ->get();
+            ->where('negocios_id', $user->negocios_id)
+            ->latest()
+            ->get();
 
         $transformar = function ($reparacion) {
             $clienteNombre = $reparacion->dispositivo?->cliente?->nombre ?? 'Cliente';
             $marcaModelo = $reparacion->dispositivo?->marca_y_modelo ?? 'Dispositivo';
-            $codigo = $reparacion->codigo_seguimiento ? ('#' . $reparacion->codigo_seguimiento) : ('#' . $reparacion->id);
+            $codigo = $reparacion->codigo_seguimiento ? ('#'.$reparacion->codigo_seguimiento) : ('#'.$reparacion->id);
 
             return [
                 'id' => $reparacion->id,
@@ -46,16 +46,16 @@ class DashboardController extends Controller
                 'imei_o_serie' => $reparacion->dispositivo?->imei_o_serie ?? 'No especificado',
                 'clave_de_acceso' => $reparacion->clave_de_acceso ?? 'Sin clave',
                 'falla_reportada' => $reparacion->falla_reportada,
-                'costo_estimado' => $reparacion->costo_estimado ? ('$' . number_format($reparacion->costo_estimado, 0, ',', '.')) : 'Sin costo estimado',
-                'sena' => $reparacion->sena ? ('$' . number_format($reparacion->sena, 0, ',', '.')) : '$0',
-                'saldo_pendiente' => '$' . number_format($reparacion->saldo_pendiente, 0, ',', '.'),
+                'costo_estimado' => $reparacion->costo_estimado ? ('$'.number_format($reparacion->costo_estimado, 0, ',', '.')) : 'Sin costo estimado',
+                'sena' => $reparacion->sena ? ('$'.number_format($reparacion->sena, 0, ',', '.')) : '$0',
+                'saldo_pendiente' => '$'.number_format($reparacion->saldo_pendiente, 0, ',', '.'),
                 'estado' => ucfirst($reparacion->estado ?? 'Recibido'),
                 'estado_slug' => strtolower($reparacion->estado ?? 'recibido'),
                 'notas_internas' => $reparacion->notas_internas ?? '',
                 'fecha_ingreso' => $this->formatearFechaHoraArgentina($reparacion->created_at),
                 'tiempo_relativo' => $this->tiempoTranscurridoArgentina($reparacion->created_at),
                 'tecnico' => $reparacion->usuario?->name ?? 'No asignado',
-                'search_target' => strtolower($clienteNombre . ' ' . $marcaModelo . ' ' . $reparacion->falla_reportada . ' ' . $codigo . ' ' . $reparacion->id)
+                'search_target' => strtolower($clienteNombre.' '.$marcaModelo.' '.$reparacion->falla_reportada.' '.$codigo.' '.$reparacion->id),
             ];
         };
 
@@ -70,7 +70,7 @@ class DashboardController extends Controller
                 'en reparación',
                 'en reparacion',
                 'en_proceso',
-                'en proceso'
+                'en proceso',
             ]);
         })->map($transformar)->values();
 
@@ -79,7 +79,7 @@ class DashboardController extends Controller
                 'listo',
                 'listos',
                 'finalizado',
-                'terminado'
+                'terminado',
             ]);
         })->map($transformar)->values();
 
@@ -114,17 +114,16 @@ class DashboardController extends Controller
             'costo_estimado.numeric' => 'El valor debe ser un valor numérico.',
         ]);
 
-
-        DB::transaction(function () use ($validated){
+        DB::transaction(function () use ($validated) {
 
             $userId = Auth::id();
             $user = User::find($userId);
 
             $cliente = Cliente::create([
-                'negocios_id' => $user->negocios_id, // Solo prueba 
+                'negocios_id' => $user->negocios_id, // Solo prueba
                 'nombre' => $validated['nombre'],
                 'telefono' => $validated['telefono'],
-                'email' => $validated['email']
+                'email' => $validated['email'],
             ]);
 
             $dispositivo = Dispositivo::create([
@@ -145,11 +144,10 @@ class DashboardController extends Controller
                 'costo_estimado' => $validated['costo_estimado'],
                 'sena' => $validated['sena'],
                 // 'notas_internas' => $validated['notas_internas'],
-                'codigo_seguimiento' => $codigo_seguimiento
+                'codigo_seguimiento' => $codigo_seguimiento,
             ]);
 
         });
-
 
         return redirect()->route('dashboard.index')->with('success', 'Reparación registrada correctamente.');
     }
@@ -161,7 +159,7 @@ class DashboardController extends Controller
         if ($reparacion->negocios_id !== $user->negocios_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'No tienes permisos para modificar esta reparación.'
+                'message' => 'No tienes permisos para modificar esta reparación.',
             ], 403);
         }
 
@@ -176,14 +174,14 @@ class DashboardController extends Controller
             'recibido' => 'Recibidos',
             'en_reparacion' => 'En Reparación',
             'listo' => 'Listos',
-            'entregado' => 'Entregado'
+            'entregado' => 'Entregado',
         ];
 
         return response()->json([
             'success' => true,
-            'message' => 'Estado actualizado a ' . ($labels[$validated['estado']] ?? $validated['estado']) . '.',
+            'message' => 'Estado actualizado a '.($labels[$validated['estado']] ?? $validated['estado']).'.',
             'estado' => $reparacion->estado,
-            'estado_label' => $labels[$validated['estado']] ?? $validated['estado']
+            'estado_label' => $labels[$validated['estado']] ?? $validated['estado'],
         ]);
     }
 }

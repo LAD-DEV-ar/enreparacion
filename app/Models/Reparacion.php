@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\FormateaFechaArgentina;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\FormateaFechaArgentina;
 
 class Reparacion extends Model
 {
-    use HasFactory, FormateaFechaArgentina;
-
+    use FormateaFechaArgentina, HasFactory;
 
     public function usuario()
     {
@@ -40,10 +39,12 @@ class Reparacion extends Model
     {
         $costo = (float) ($this->costo_estimado ?? 0);
         $sena = (float) ($this->sena ?? 0);
+
         return max(0, $costo - $sena);
     }
 
     protected $table = 'reparaciones';
+
     protected $fillable = [
         'negocios_id',
         'dispositivos_id',
@@ -54,6 +55,6 @@ class Reparacion extends Model
         'costo_estimado',
         'sena',
         'notas_internas',
-        'codigo_seguimiento'
+        'codigo_seguimiento',
     ];
 }

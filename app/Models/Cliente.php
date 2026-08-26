@@ -35,7 +35,8 @@ class Cliente extends Model
         if (count($palabras) >= 2) {
             $primera = mb_substr($palabras[0], 0, 1);
             $ultima = mb_substr($palabras[count($palabras) - 1], 0, 1);
-            return mb_strtoupper($primera . $ultima);
+
+            return mb_strtoupper($primera.$ultima);
         }
 
         return mb_strtoupper(mb_substr($palabras[0], 0, min(2, mb_strlen($palabras[0]))));
@@ -53,20 +54,20 @@ class Cliente extends Model
         }
 
         if (strlen($raw) === 10) {
-            $raw = '549' . $raw;
+            $raw = '549'.$raw;
         } elseif (strlen($raw) === 11 && str_starts_with($raw, '15')) {
-            $raw = '549' . substr($raw, 2);
-        } elseif (str_starts_with($raw, '54') && !str_starts_with($raw, '549') && strlen($raw) === 12) {
-            $raw = '549' . substr($raw, 2);
+            $raw = '549'.substr($raw, 2);
+        } elseif (str_starts_with($raw, '54') && ! str_starts_with($raw, '549') && strlen($raw) === 12) {
+            $raw = '549'.substr($raw, 2);
         }
 
-        return 'https://wa.me/' . $raw;
+        return 'https://wa.me/'.$raw;
     }
 
     protected $fillable = [
         'negocios_id',
         'nombre',
         'telefono',
-        'email'
+        'email',
     ];
 }

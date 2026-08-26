@@ -51,14 +51,14 @@ class VerificarEmailController extends Controller
 
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login')->withErrors(['email' => 'Debes iniciar sesión para verificar tu cuenta.']);
         }
 
         // Buscar el último código de verificación emitido para el usuario
         $verificationCode = $user->emailVerificationCodes()->latest()->first();
 
-        if (!$verificationCode) {
+        if (! $verificationCode) {
             return back()->withErrors(['code' => 'No tienes un código de verificación activo. Solicita uno nuevo.']);
         }
 
@@ -68,7 +68,7 @@ class VerificarEmailController extends Controller
         }
 
         // Comprobar si el código coincide con el hash guardado
-        if (!Hash::check($code, $verificationCode->code)) {
+        if (! Hash::check($code, $verificationCode->code)) {
             return back()->withErrors(['code' => 'El código de verificación ingresado es incorrecto.']);
         }
 
@@ -80,7 +80,7 @@ class VerificarEmailController extends Controller
         $user->emailVerificationCodes()->delete();
 
         // Redirigir a registrar el negocio si aún no tiene uno
-        if (!$user->negocios_id) {
+        if (! $user->negocios_id) {
             return redirect()->route('negocios')->with('success', '¡Email verificado con éxito! Ahora registra tu negocio.');
         }
 
@@ -94,7 +94,7 @@ class VerificarEmailController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login');
         }
 

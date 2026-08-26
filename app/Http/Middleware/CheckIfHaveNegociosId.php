@@ -17,10 +17,10 @@ class CheckIfHaveNegociosId
     {
         $user = $request->user();
 
-        if (!$user->negocios_id){
+        if (! $user->negocios_id) {
             return redirect()->route('negocios');
         }
-            
+
         return $next($request);
     }
 }

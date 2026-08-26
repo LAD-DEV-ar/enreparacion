@@ -4,11 +4,8 @@ namespace App\Http\Controllers\Clientes;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
-use App\Models\Dispositivo;
-use App\Models\Reparacion;
 use App\Traits\FormateaFechaArgentina;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class ClientesController extends Controller
 {
@@ -20,11 +17,11 @@ class ClientesController extends Controller
 
         // Obtenemos los clientes del negocio con sus dispositivos y reparaciones cargadas eficientemente
         $clientesRaw = Cliente::with([
-            'dispositivos.reparaciones.usuario'
+            'dispositivos.reparaciones.usuario',
         ])
-        ->where('negocios_id', $user->negocios_id)
-        ->latest()
-        ->get();
+            ->where('negocios_id', $user->negocios_id)
+            ->latest()
+            ->get();
 
         $clientes = $clientesRaw->map(function ($cliente) {
             // Aplanamos todas las reparaciones de todos los dispositivos del cliente
@@ -37,6 +34,7 @@ class ClientesController extends Controller
             // Consideramos equipos en taller a aquellos en estado activo ('recibido', 'en_reparacion', o 'listo')
             $reparacionesEnTaller = $todasReparaciones->filter(function ($rep) {
                 $estado = strtolower(trim($rep->estado ?? ''));
+
                 return in_array($estado, [
                     'recibido',
                     'en_reparacion',
@@ -45,7 +43,7 @@ class ClientesController extends Controller
                     'en_proceso',
                     'en proceso',
                     'listo',
-                    'listos'
+                    'listos',
                 ]);
             });
 
@@ -53,11 +51,11 @@ class ClientesController extends Controller
 
             $dispositivosNombres = $cliente->dispositivos->pluck('marca_y_modelo')->filter()->unique()->implode(', ');
             $codigosReparaciones = $todasReparaciones->map(function ($rep) {
-                return $rep->codigo_seguimiento ? ('#' . $rep->codigo_seguimiento) : ('#' . $rep->id);
+                return $rep->codigo_seguimiento ? ('#'.$rep->codigo_seguimiento) : ('#'.$rep->id);
             })->implode(' ');
 
             $historialReparaciones = $todasReparaciones->map(function ($reparacion) {
-                $codigo = $reparacion->codigo_seguimiento ? ('#' . $reparacion->codigo_seguimiento) : ('#' . $reparacion->id);
+                $codigo = $reparacion->codigo_seguimiento ? ('#'.$reparacion->codigo_seguimiento) : ('#'.$reparacion->id);
                 $marcaModelo = $reparacion->dispositivo?->marca_y_modelo ?? 'Dispositivo no especificado';
 
                 return [
@@ -67,17 +65,17 @@ class ClientesController extends Controller
                     'imei_o_serie' => $reparacion->dispositivo?->imei_o_serie ?? 'No especificado',
                     'clave_de_acceso' => $reparacion->clave_de_acceso ?? 'Sin clave',
                     'falla_reportada' => $reparacion->falla_reportada,
-                    'costo_estimado' => $reparacion->costo_estimado ? ('$' . number_format($reparacion->costo_estimado, 0, ',', '.')) : 'Sin costo',
+                    'costo_estimado' => $reparacion->costo_estimado ? ('$'.number_format($reparacion->costo_estimado, 0, ',', '.')) : 'Sin costo',
                     'costo_estimado_num' => (float) ($reparacion->costo_estimado ?? 0),
-                    'sena' => $reparacion->sena ? ('$' . number_format($reparacion->sena, 0, ',', '.')) : '$0',
-                    'saldo_pendiente' => '$' . number_format($reparacion->saldo_pendiente, 0, ',', '.'),
+                    'sena' => $reparacion->sena ? ('$'.number_format($reparacion->sena, 0, ',', '.')) : '$0',
+                    'saldo_pendiente' => '$'.number_format($reparacion->saldo_pendiente, 0, ',', '.'),
                     'saldo_pendiente_num' => (float) ($reparacion->saldo_pendiente ?? 0),
                     'estado' => ucfirst($reparacion->estado ?? 'Recibido'),
                     'estado_slug' => strtolower($reparacion->estado ?? 'recibido'),
                     'notas_internas' => $reparacion->notas_internas ?? '',
                     'fecha_ingreso' => $this->formatearFechaHoraArgentina($reparacion->created_at),
                     'tiempo_relativo' => $this->tiempoTranscurridoArgentina($reparacion->created_at),
-                    'tecnico' => $reparacion->usuario?->name ?? 'No asignado'
+                    'tecnico' => $reparacion->usuario?->name ?? 'No asignado',
                 ];
             })->values();
 
@@ -106,18 +104,18 @@ class ClientesController extends Controller
                 'equipos_en_taller_label' => $equiposEnTallerCount === 1 ? '1 Equipo en taller' : "{$equiposEnTallerCount} Equipos en taller",
                 'dispositivos_nombres' => $dispositivosNombres ?: 'Sin dispositivos registrados',
                 'dispositivos' => $dispositivosDetallados,
-                'total_gastado' => '$' . number_format($totalGastado, 0, ',', '.'),
-                'saldo_pendiente_total' => '$' . number_format($saldoPendienteTotal, 0, ',', '.'),
+                'total_gastado' => '$'.number_format($totalGastado, 0, ',', '.'),
+                'saldo_pendiente_total' => '$'.number_format($saldoPendienteTotal, 0, ',', '.'),
                 'fecha_registro' => $this->formatearSoloFechaArgentina($cliente->created_at),
                 'tiempo_registro_relativo' => $this->tiempoTranscurridoArgentina($cliente->created_at, 'Registrado '),
                 'historial_reparaciones' => $historialReparaciones,
                 'search_target' => strtolower(
-                    $cliente->nombre . ' ' .
-                    $cliente->telefono . ' ' .
-                    ($cliente->email ?? '') . ' ' .
-                    $dispositivosNombres . ' ' .
+                    $cliente->nombre.' '.
+                    $cliente->telefono.' '.
+                    ($cliente->email ?? '').' '.
+                    $dispositivosNombres.' '.
                     $codigosReparaciones
-                )
+                ),
             ];
         })->values();
 

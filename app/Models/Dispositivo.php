@@ -18,10 +18,11 @@ class Dispositivo extends Model
     {
         return $this->hasMany(Reparacion::class, 'dispositivos_id');
     }
+
     //
     protected $fillable = [
         'clientes_id',
         'marca_y_modelo',
-        'imei_o_serie'
+        'imei_o_serie',
     ];
 }

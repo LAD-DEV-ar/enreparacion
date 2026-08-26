@@ -4,12 +4,13 @@ namespace Database\Factories;
 
 use App\Models\Dispositivo;
 use App\Models\Negocio;
+use App\Models\Reparacion;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends Factory<\App\Models\Reparacion>
+ * @extends Factory<Reparacion>
  */
 class ReparacionFactory extends Factory
 {
@@ -43,15 +44,15 @@ class ReparacionFactory extends Factory
             : null;
 
         return [
-            'negocios_id'       => Negocio::factory(),
-            'dispositivos_id'   => Dispositivo::factory(),
-            'users_id'          => User::factory(),
-            'falla_reportada'   => fake()->randomElement(self::$fallas),
-            'clave_de_acceso'   => fake()->boolean(50) ? fake()->numerify('####') : null,
-            'estado'            => fake()->randomElement(self::$estados),
-            'costo_estimado'    => $costo,
-            'sena'              => $sena,
-            'notas_internas'    => fake()->boolean(40) ? fake()->sentence(10) : null,
+            'negocios_id' => Negocio::factory(),
+            'dispositivos_id' => Dispositivo::factory(),
+            'users_id' => User::factory(),
+            'falla_reportada' => fake()->randomElement(self::$fallas),
+            'clave_de_acceso' => fake()->boolean(50) ? fake()->numerify('####') : null,
+            'estado' => fake()->randomElement(self::$estados),
+            'costo_estimado' => $costo,
+            'sena' => $sena,
+            'notas_internas' => fake()->boolean(40) ? fake()->sentence(10) : null,
             'codigo_seguimiento' => strtoupper(Str::random(10)),
         ];
     }
@@ -62,9 +63,9 @@ class ReparacionFactory extends Factory
     public function paraContexto(Negocio $negocio, Dispositivo $dispositivo, User $usuario): static
     {
         return $this->state(fn (array $attributes) => [
-            'negocios_id'     => $negocio->id,
+            'negocios_id' => $negocio->id,
             'dispositivos_id' => $dispositivo->id,
-            'users_id'        => $usuario->id,
+            'users_id' => $usuario->id,
         ]);
     }
 }

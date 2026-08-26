@@ -24,9 +24,9 @@ class NegocioFactory extends Factory
         ];
 
         return [
-            'nombre'    => fake()->randomElement($nombres) . ' ' . fake()->company(),
+            'nombre' => fake()->randomElement($nombres).' '.fake()->company(),
             'direccion' => fake('es_AR')->streetAddress(),
-            'telefono'  => fake('es_AR')->phoneNumber(),
+            'telefono' => fake('es_AR')->phoneNumber(),
         ];
     }
 }

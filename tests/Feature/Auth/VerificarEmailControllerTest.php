@@ -3,7 +3,6 @@
 namespace Tests\Feature\Auth;
 
 use App\Mail\VerifyEmailCode;
-use App\Models\EmailVerificationCode;
 use App\Models\Negocio;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

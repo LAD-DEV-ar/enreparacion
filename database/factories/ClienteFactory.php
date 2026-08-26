@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\Cliente;
 use App\Models\Negocio;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<\App\Models\Cliente>
+ * @extends Factory<Cliente>
  */
 class ClienteFactory extends Factory
 {
@@ -19,9 +20,9 @@ class ClienteFactory extends Factory
     {
         return [
             'negocios_id' => Negocio::factory(),
-            'nombre'      => fake('es_AR')->name(),
-            'telefono'    => fake('es_AR')->phoneNumber(),
-            'email'       => fake()->unique()->safeEmail(),
+            'nombre' => fake('es_AR')->name(),
+            'telefono' => fake('es_AR')->phoneNumber(),
+            'email' => fake()->unique()->safeEmail(),
         ];
     }
 
