@@ -336,217 +336,221 @@
             ></div>
 
             {{-- Ventana Modal Principal --}}
-            <div
-                x-show="openDetailModal"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 scale-95 translate-y-3"
-                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                x-transition:leave-end="opacity-0 scale-95 translate-y-3"
-                class="relative z-10 w-full max-w-4xl max-h-[90vh] rounded-3xl bg-[#141c25] p-6 sm:p-8 shadow-2xl border border-border/40 overflow-y-auto my-auto"
-            >
-                <template x-if="selectedCliente">
-                    <div class="flex flex-col gap-6">
+            <x-scrollbar>
+                <div
+                    x-show="openDetailModal"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 scale-95 translate-y-3"
+                    x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 scale-95 translate-y-3"
+                    class="relative z-10 w-full max-w-4xl max-h-[90vh] rounded-3xl bg-[#141c25] p-6 sm:p-8 shadow-2xl border border-border/40 overflow-y-auto my-auto"
+                >
+                    <x-scrollbar>
+                        <template x-if="selectedCliente">
+                            <div class="flex flex-col gap-6">
 
-                        {{-- ENCABEZADO DE LA FICHA --}}
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-border/30 pb-6">
-                            
-                            {{-- Info Principal del Cliente --}}
-                            <div class="flex items-center gap-4.5">
-                                <div
-                                    class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/20 border-2 border-primary/40 text-primary-light font-bold text-2xl tracking-wider shadow-md"
-                                    x-text="selectedCliente.iniciales"
-                                ></div>
-
-                                <div>
-                                    <h2 class="text-2xl font-bold text-white tracking-tight" x-text="selectedCliente.nombre"></h2>
+                                {{-- ENCABEZADO DE LA FICHA --}}
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-border/30 pb-6">
                                     
-                                    <div class="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-text-secondary">
-                                        <span class="flex items-center gap-1 font-semibold text-text-primary">
-                                            <svg class="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                                    {{-- Info Principal del Cliente --}}
+                                    <div class="flex items-center gap-4.5">
+                                        <div
+                                            class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/20 border-2 border-primary/40 text-primary-light font-bold text-2xl tracking-wider shadow-md"
+                                            x-text="selectedCliente.iniciales"
+                                        ></div>
+
+                                        <div>
+                                            <h2 class="text-2xl font-bold text-white tracking-tight" x-text="selectedCliente.nombre"></h2>
+                                            
+                                            <div class="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-text-secondary">
+                                                <span class="flex items-center gap-1 font-semibold text-text-primary">
+                                                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/>
+                                                    </svg>
+                                                    <span x-text="selectedCliente.telefono"></span>
+                                                </span>
+
+                                                <template x-if="selectedCliente.email && selectedCliente.email !== 'Sin correo'">
+                                                    <span class="flex items-center gap-1">
+                                                        <span>•</span>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 text-text-disabled">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                                                        </svg>
+                                                        <span x-text="selectedCliente.email"></span>
+                                                    </span>
+                                                </template>
+
+                                                <span>•</span>
+                                                <span x-text="selectedCliente.tiempo_registro_relativo"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Botones de Acción en Header --}}
+                                    <div class="flex items-center gap-3 shrink-0">
+                                        <a
+                                            :href="selectedCliente.whatsapp_url"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md active:scale-95"
+                                        >
+                                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
                                                 <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/>
                                             </svg>
-                                            <span x-text="selectedCliente.telefono"></span>
-                                        </span>
+                                            <span>Chatear por WhatsApp</span>
+                                        </a>
 
-                                        <template x-if="selectedCliente.email && selectedCliente.email !== 'Sin correo'">
-                                            <span class="flex items-center gap-1">
-                                                <span>•</span>
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 text-text-disabled">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-                                                </svg>
-                                                <span x-text="selectedCliente.email"></span>
-                                            </span>
+                                        <button
+                                            type="button"
+                                            @click="openDetailModal = false"
+                                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-hover text-text-disabled hover:text-white hover:bg-border/60 transition-colors cursor-pointer"
+                                            title="Cerrar modal"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                </div>
+
+
+                                {{-- TARJETAS KPI DE RESUMEN COMERCIAL --}}
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                                    
+                                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30">
+                                        <span class="text-xs font-semibold text-text-disabled uppercase tracking-wider">Reparaciones</span>
+                                        <div class="text-xl font-extrabold text-white mt-1" x-text="selectedCliente.total_reparaciones"></div>
+                                        <span class="text-[11px] text-text-secondary mt-0.5 block">Historial total</span>
+                                    </div>
+
+                                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30">
+                                        <span class="text-xs font-semibold text-text-disabled uppercase tracking-wider">En Taller</span>
+                                        <div
+                                            class="text-xl font-extrabold mt-1"
+                                            :class="selectedCliente.equipos_en_taller > 0 ? 'text-amber-400' : 'text-text-secondary'"
+                                            x-text="selectedCliente.equipos_en_taller"
+                                        ></div>
+                                        <span class="text-[11px] text-text-secondary mt-0.5 block">Trabajos activos</span>
+                                    </div>
+
+                                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30">
+                                        <span class="text-xs font-semibold text-text-disabled uppercase tracking-wider">Total Facturado</span>
+                                        <div class="text-xl font-extrabold text-primary-light mt-1" x-text="selectedCliente.total_gastado"></div>
+                                        <span class="text-[11px] text-text-secondary mt-0.5 block">Costo estimado acumulado</span>
+                                    </div>
+
+                                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30">
+                                        <span class="text-xs font-semibold text-text-disabled uppercase tracking-wider">Saldo Pendiente</span>
+                                        <div
+                                            class="text-xl font-extrabold mt-1"
+                                            :class="selectedCliente.saldo_pendiente_total !== '$0' ? 'text-danger' : 'text-emerald-400'"
+                                            x-text="selectedCliente.saldo_pendiente_total"
+                                        ></div>
+                                        <span class="text-[11px] text-text-secondary mt-0.5 block">Por cobrar</span>
+                                    </div>
+
+                                </div>
+
+
+                                {{-- SECCIÓN: HISTORIAL DE REPARACIONES --}}
+                                <div class="flex flex-col gap-3">
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-5 h-5 text-primary">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                            </svg>
+                                            <span>Historial de Reparaciones</span>
+                                        </h3>
+                                        <span class="text-xs text-text-disabled font-medium" x-text="`${selectedCliente.historial_reparaciones.length} registro(s)`"></span>
+                                    </div>
+
+                                    {{-- Lista de tarjetas de historial --}}
+                                    <div class="flex flex-col gap-3 max-h-80 overflow-y-auto pr-1">
+
+                                        <template x-for="rep in selectedCliente.historial_reparaciones" :key="rep.id">
+                                            <div class="flex flex-col gap-3 rounded-2xl bg-[#1c2530] border border-border/30 p-4 hover:border-border transition-colors">
+                                                
+                                                {{-- Header Reparación: Código, Dispositivo y Estado --}}
+                                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                                    <div class="flex items-center gap-2.5">
+                                                        <span class="font-bold text-xs text-[#8ba0b8] bg-[#141c25] px-2.5 py-1 rounded-lg border border-border/40" x-text="rep.codigo_seguimiento"></span>
+                                                        <h4 class="text-sm font-bold text-white" x-text="rep.dispositivo_marca_modelo"></h4>
+                                                    </div>
+
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-xs italic text-text-disabled" x-text="rep.tiempo_relativo"></span>
+                                                        
+                                                        {{-- Badge Estado --}}
+                                                        <span
+                                                            class="px-2.5 py-0.5 rounded-lg text-xs font-bold uppercase tracking-wider"
+                                                            :class="{
+                                                                'bg-primary/20 text-primary-light border border-primary/30': rep.estado_slug === 'recibido',
+                                                                'bg-amber-500/20 text-amber-400 border border-amber-500/30': rep.estado_slug === 'en_reparacion',
+                                                                'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30': rep.estado_slug === 'listo'
+                                                            }"
+                                                            x-text="rep.estado"
+                                                        ></span>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Detalle: Falla e Información Técnica --}}
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-[#141c25]/60 rounded-xl p-3 border border-border/20">
+                                                    <div>
+                                                        <span class="text-text-disabled font-semibold">Falla:</span>
+                                                        <p class="text-white font-medium mt-0.5" x-text="rep.falla_reportada"></p>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-text-disabled font-semibold">IMEI / Serie:</span>
+                                                        <p class="text-white font-mono mt-0.5" x-text="rep.imei_o_serie"></p>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Footer Reparación: Costos y Saldos --}}
+                                                <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-text-secondary pt-1 border-t border-border/20">
+                                                    <div class="flex items-center gap-4">
+                                                        <span>Costo: <strong class="text-white font-bold" x-text="rep.costo_estimado"></strong></span>
+                                                        <span>Seña: <strong class="text-emerald-400 font-bold" x-text="rep.sena"></strong></span>
+                                                        <span>Saldo: <strong class="text-danger font-bold" x-text="rep.saldo_pendiente"></strong></span>
+                                                    </div>
+
+                                                    <div class="text-text-disabled">
+                                                        Ingreso: <span x-text="rep.fecha_ingreso"></span>
+                                                    </div>
+                                                </div>
+
+                                            </div>
                                         </template>
 
-                                        <span>•</span>
-                                        <span x-text="selectedCliente.tiempo_registro_relativo"></span>
+                                        {{-- Sin reparaciones --}}
+                                        <template x-if="selectedCliente.historial_reparaciones.length === 0">
+                                            <div class="flex flex-col items-center justify-center py-8 text-center text-text-disabled">
+                                                <p class="text-sm">Este cliente aún no tiene reparaciones registradas.</p>
+                                            </div>
+                                        </template>
+
                                     </div>
                                 </div>
-                            </div>
-
-                            {{-- Botones de Acción en Header --}}
-                            <div class="flex items-center gap-3 shrink-0">
-                                <a
-                                    :href="selectedCliente.whatsapp_url"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md active:scale-95"
-                                >
-                                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/>
-                                    </svg>
-                                    <span>Chatear por WhatsApp</span>
-                                </a>
-
-                                <button
-                                    type="button"
-                                    @click="openDetailModal = false"
-                                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-hover text-text-disabled hover:text-white hover:bg-border/60 transition-colors cursor-pointer"
-                                    title="Cerrar modal"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                        </div>
 
 
-                        {{-- TARJETAS KPI DE RESUMEN COMERCIAL --}}
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                            
-                            <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30">
-                                <span class="text-xs font-semibold text-text-disabled uppercase tracking-wider">Reparaciones</span>
-                                <div class="text-xl font-extrabold text-white mt-1" x-text="selectedCliente.total_reparaciones"></div>
-                                <span class="text-[11px] text-text-secondary mt-0.5 block">Historial total</span>
-                            </div>
-
-                            <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30">
-                                <span class="text-xs font-semibold text-text-disabled uppercase tracking-wider">En Taller</span>
-                                <div
-                                    class="text-xl font-extrabold mt-1"
-                                    :class="selectedCliente.equipos_en_taller > 0 ? 'text-amber-400' : 'text-text-secondary'"
-                                    x-text="selectedCliente.equipos_en_taller"
-                                ></div>
-                                <span class="text-[11px] text-text-secondary mt-0.5 block">Trabajos activos</span>
-                            </div>
-
-                            <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30">
-                                <span class="text-xs font-semibold text-text-disabled uppercase tracking-wider">Total Facturado</span>
-                                <div class="text-xl font-extrabold text-primary-light mt-1" x-text="selectedCliente.total_gastado"></div>
-                                <span class="text-[11px] text-text-secondary mt-0.5 block">Costo estimado acumulado</span>
-                            </div>
-
-                            <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30">
-                                <span class="text-xs font-semibold text-text-disabled uppercase tracking-wider">Saldo Pendiente</span>
-                                <div
-                                    class="text-xl font-extrabold mt-1"
-                                    :class="selectedCliente.saldo_pendiente_total !== '$0' ? 'text-danger' : 'text-emerald-400'"
-                                    x-text="selectedCliente.saldo_pendiente_total"
-                                ></div>
-                                <span class="text-[11px] text-text-secondary mt-0.5 block">Por cobrar</span>
-                            </div>
-
-                        </div>
-
-
-                        {{-- SECCIÓN: HISTORIAL DE REPARACIONES --}}
-                        <div class="flex flex-col gap-3">
-                            <div class="flex items-center justify-between">
-                                <h3 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-5 h-5 text-primary">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                    </svg>
-                                    <span>Historial de Reparaciones</span>
-                                </h3>
-                                <span class="text-xs text-text-disabled font-medium" x-text="`${selectedCliente.historial_reparaciones.length} registro(s)`"></span>
-                            </div>
-
-                            {{-- Lista de tarjetas de historial --}}
-                            <div class="flex flex-col gap-3 max-h-80 overflow-y-auto pr-1">
-
-                                <template x-for="rep in selectedCliente.historial_reparaciones" :key="rep.id">
-                                    <div class="flex flex-col gap-3 rounded-2xl bg-[#1c2530] border border-border/30 p-4 hover:border-border transition-colors">
-                                        
-                                        {{-- Header Reparación: Código, Dispositivo y Estado --}}
-                                        <div class="flex flex-wrap items-center justify-between gap-2">
-                                            <div class="flex items-center gap-2.5">
-                                                <span class="font-bold text-xs text-[#8ba0b8] bg-[#141c25] px-2.5 py-1 rounded-lg border border-border/40" x-text="rep.codigo_seguimiento"></span>
-                                                <h4 class="text-sm font-bold text-white" x-text="rep.dispositivo_marca_modelo"></h4>
-                                            </div>
-
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-xs italic text-text-disabled" x-text="rep.tiempo_relativo"></span>
-                                                
-                                                {{-- Badge Estado --}}
-                                                <span
-                                                    class="px-2.5 py-0.5 rounded-lg text-xs font-bold uppercase tracking-wider"
-                                                    :class="{
-                                                        'bg-primary/20 text-primary-light border border-primary/30': rep.estado_slug === 'recibido',
-                                                        'bg-amber-500/20 text-amber-400 border border-amber-500/30': rep.estado_slug === 'en_reparacion',
-                                                        'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30': rep.estado_slug === 'listo'
-                                                    }"
-                                                    x-text="rep.estado"
-                                                ></span>
-                                            </div>
-                                        </div>
-
-                                        {{-- Detalle: Falla e Información Técnica --}}
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-[#141c25]/60 rounded-xl p-3 border border-border/20">
-                                            <div>
-                                                <span class="text-text-disabled font-semibold">Falla:</span>
-                                                <p class="text-white font-medium mt-0.5" x-text="rep.falla_reportada"></p>
-                                            </div>
-                                            <div>
-                                                <span class="text-text-disabled font-semibold">IMEI / Serie:</span>
-                                                <p class="text-white font-mono mt-0.5" x-text="rep.imei_o_serie"></p>
-                                            </div>
-                                        </div>
-
-                                        {{-- Footer Reparación: Costos y Saldos --}}
-                                        <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-text-secondary pt-1 border-t border-border/20">
-                                            <div class="flex items-center gap-4">
-                                                <span>Costo: <strong class="text-white font-bold" x-text="rep.costo_estimado"></strong></span>
-                                                <span>Seña: <strong class="text-emerald-400 font-bold" x-text="rep.sena"></strong></span>
-                                                <span>Saldo: <strong class="text-danger font-bold" x-text="rep.saldo_pendiente"></strong></span>
-                                            </div>
-
-                                            <div class="text-text-disabled">
-                                                Ingreso: <span x-text="rep.fecha_ingreso"></span>
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                </template>
-
-                                {{-- Sin reparaciones --}}
-                                <template x-if="selectedCliente.historial_reparaciones.length === 0">
-                                    <div class="flex flex-col items-center justify-center py-8 text-center text-text-disabled">
-                                        <p class="text-sm">Este cliente aún no tiene reparaciones registradas.</p>
-                                    </div>
-                                </template>
+                                {{-- PIE DEL MODAL: CIERRE Y ACCIONES --}}
+                                <div class="flex items-center justify-end gap-4 border-t border-border/30 pt-5">
+                                    <button
+                                        type="button"
+                                        @click="openDetailModal = false"
+                                        class="h-11 rounded-xl bg-surface-hover hover:bg-border/60 px-6 text-sm font-bold text-white transition-colors cursor-pointer"
+                                    >
+                                        Cerrar Ficha
+                                    </button>
+                                </div>
 
                             </div>
-                        </div>
-
-
-                        {{-- PIE DEL MODAL: CIERRE Y ACCIONES --}}
-                        <div class="flex items-center justify-end gap-4 border-t border-border/30 pt-5">
-                            <button
-                                type="button"
-                                @click="openDetailModal = false"
-                                class="h-11 rounded-xl bg-surface-hover hover:bg-border/60 px-6 text-sm font-bold text-white transition-colors cursor-pointer"
-                            >
-                                Cerrar Ficha
-                            </button>
-                        </div>
-
-                    </div>
-                </template>
-            </div>
+                        </template>
+                    </x-scrollbar>
+                </div>
+            </x-scrollbar>
         </div>
 
 

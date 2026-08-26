@@ -887,7 +887,7 @@
                             class="px-3.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase"
                             :class="{
                                 'bg-[#0081cc]/20 text-[#33b4ff] border border-[#0081cc]/40': selectedReparacion?.estado === 'Recibido',
-                                'bg-warning/20 text-warning border border-warning/40': selectedReparacion?.estado === 'En Reparación' || selectedReparacion?.estado === 'En reparacion',
+                                'bg-warning/20 text-warning border border-warning/40': selectedReparacion?.estado === 'En_reparacion' || selectedReparacion?.estado === 'En reparacion',
                                 'bg-success/20 text-success border border-success/40': selectedReparacion?.estado === 'Listo' || selectedReparacion?.estado === 'Listos'
                             }"
                             x-text="selectedReparacion?.estado"
