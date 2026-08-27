@@ -8,13 +8,39 @@
              LOGO
         ========================================== --}}
 
-        <div class="flex h-32 items-center px-8">
+        <a href="{{ route('dashboard.index') }}" class="flex flex-col items-center p-8">
+    
+            {{-- Logo --}}
+            <div
+                x-data="{ loaded: false }"
+                x-init="$nextTick(() => { if ($refs.logo?.complete) loaded = true })"
+                class="relative h-10 w-10 overflow-hidden rounded-md"
+            >
+                <div
+                    x-show="!loaded"
+                    x-cloak
+                    class="absolute inset-0 rounded-md bg-gray-500/20"
+                >
+                    <div class="shimmer absolute inset-0 -translate-x-full"></div>
+                </div>
 
-            <span class="text-2xl font-bold tracking-tight">
-                EnReparación
+                <img
+                    x-ref="logo"
+                    src="{{ asset('/favicon.svg') }}"
+                    title="EnReparacion"
+                    alt="EnReparacion"
+                    class="relative h-10 w-10 object-contain transition-opacity duration-200"
+                    :class="loaded ? 'opacity-100' : 'opacity-0'"
+                    @load="loaded = true"
+                    x-on:error="loaded = true"
+                >
+            </div>
+
+            <span class="flex text-2xl font-bold tracking-tight">
+                En <span class="text-primary">Reparación</span>
             </span>
 
-        </div>
+        </a>
 
 
         {{-- =========================================

@@ -26,7 +26,7 @@
 
         columnaLabel(key) {
             if (key === 'recibido') return 'Recibidos';
-            if (key === 'en_reparacion') return 'En Reparación';
+            if (key === 'en_reparacion' || key === 'En_reparacion') return 'En Reparación';
             if (key === 'listo') return 'Listos';
             return key || '';
         },
@@ -719,8 +719,19 @@
                                 <h3 class="text-xl sm:text-2xl font-bold text-white tracking-wide">
                                     Dispositivo:
                                 </h3>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-7 h-7 text-[#0081cc]">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21 21 17.25l-5.83-5.83m-3.75 3.75L6 20.5 3.5 18l5.33-5.33M15 3a6 6 0 0 0-7.3 7.3L3 15l6 6 4.7-4.7A6 6 0 0 0 15 3Z" />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    class="w-7 h-7 text-primary"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M7 10h3V7L6.5 3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1-3 3l-6-6a6 6 0 0 1-8-8L7 10Z"
+                                    />
                                 </svg>
                             </div>
 
@@ -890,7 +901,7 @@
                                 'bg-warning/20 text-warning border border-warning/40': selectedReparacion?.estado === 'En_reparacion' || selectedReparacion?.estado === 'En reparacion',
                                 'bg-success/20 text-success border border-success/40': selectedReparacion?.estado === 'Listo' || selectedReparacion?.estado === 'Listos'
                             }"
-                            x-text="selectedReparacion?.estado"
+                            x-text="columnaLabel(selectedReparacion?.estado)"
                         ></span>
 
                         <button

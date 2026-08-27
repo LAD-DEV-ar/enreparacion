@@ -641,7 +641,7 @@
                                             <button
                                                 type="button"
                                                 @click="copiarTexto(selectedReparacion.codigo_limpio, 'codigo')"
-                                                class="text-text-disabled hover:text-primary-light transition-colors p-1 rounded-md"
+                                                class="text-text-disabled hover:text-primary-light transition-colors p-1 rounded-md cursor-pointer"
                                                 title="Copiar código"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
@@ -1018,7 +1018,7 @@
                     <button
                         type="button"
                         @click="openPrintModal = false"
-                        class="text-text-disabled hover:text-white transition-colors"
+                        class="text-text-disabled hover:text-white transition-colors cursor-pointer"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
