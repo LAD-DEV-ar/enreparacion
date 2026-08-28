@@ -46,5 +46,11 @@ jobs:
       - name: Generate Application Key
         run: php artisan key:generate
 
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Build frontend assets
+        run: npm run build
+
       - name: Execute Tests
         run: php artisan test
