@@ -24,6 +24,16 @@ class Negocio extends Model
         return $this->hasMany(Cliente::class, 'negocios_id');
     }
 
+    public function plantillasNotificaciones()
+    {
+        return $this->hasMany(Notificacion::class, 'negocios_id');
+    }
+
+    public function notificacionesEnviadas()
+    {
+        return $this->hasMany(NotificacionCliente::class, 'negocios_id');
+    }
+
     protected $fillable = [
         'nombre',
         'direccion',

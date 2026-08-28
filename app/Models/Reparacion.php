@@ -25,6 +25,11 @@ class Reparacion extends Model
         return $this->belongsTo(Negocio::class, 'negocios_id');
     }
 
+    public function notificacionesCliente()
+    {
+        return $this->hasMany(NotificacionCliente::class, 'reparaciones_id');
+    }
+
     public function getClienteAttribute()
     {
         return $this->dispositivo?->cliente;

@@ -7,6 +7,7 @@ use App\Models\Cliente;
 use App\Models\Dispositivo;
 use App\Models\Reparacion;
 use App\Models\User;
+use App\Services\NotificacionService;
 use App\Traits\FormateaFechaArgentina;
 use App\Traits\GeneraCodigoReparacion;
 use Illuminate\Http\Request;
@@ -152,7 +153,7 @@ class DashboardController extends Controller
         return redirect()->route('dashboard.index')->with('success', 'Reparación registrada correctamente.');
     }
 
-    public function updateEstado(Request $request, Reparacion $reparacion)
+    public function updateEstado(Request $request, Reparacion $reparacion, NotificacionService $notificacionService)
     {
         $user = auth()->user();
 
@@ -165,6 +166,8 @@ class DashboardController extends Controller
 
         $validated = $request->validate([
             'estado' => ['required', 'string', 'in:recibido,en_reparacion,listo,entregado'],
+            'enviar_email' => ['nullable', 'boolean'],
+            'mensaje_personalizado' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $reparacion->estado = $validated['estado'];
@@ -177,11 +180,36 @@ class DashboardController extends Controller
             'entregado' => 'Entregado',
         ];
 
+        $emailEnviado = false;
+        $emailMensaje = null;
+
+        if (!empty($validated['enviar_email'])) {
+            $reparacion->loadMissing(['dispositivo.cliente', 'negocio', 'usuario']);
+            $resultadoNotificacion = $notificacionService->enviarNotificacionEstado(
+                reparacion: $reparacion,
+                nuevoEstado: $validated['estado'],
+                usuario: $user,
+                mensajePersonalizado: $validated['mensaje_personalizado'] ?? null
+            );
+
+            $emailEnviado = $resultadoNotificacion['enviado'] ?? false;
+            $emailMensaje = $resultadoNotificacion['message'] ?? null;
+        }
+
+        $mensajeExito = 'Estado actualizado a ' . ($labels[$validated['estado']] ?? $validated['estado']) . '.';
+        if ($emailEnviado) {
+            $mensajeExito .= ' Se envió la notificación por correo al cliente.';
+        } elseif (!empty($validated['enviar_email']) && !$emailEnviado && $emailMensaje) {
+            $mensajeExito .= ' (Aviso de email: ' . $emailMensaje . ')';
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Estado actualizado a '.($labels[$validated['estado']] ?? $validated['estado']).'.',
+            'message' => $mensajeExito,
             'estado' => $reparacion->estado,
             'estado_label' => $labels[$validated['estado']] ?? $validated['estado'],
+            'email_enviado' => $emailEnviado,
+            'email_mensaje' => $emailMensaje,
         ]);
     }
 }

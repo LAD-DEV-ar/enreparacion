@@ -24,6 +24,11 @@ class Cliente extends Model
         return $this->belongsTo(Negocio::class, 'negocios_id');
     }
 
+    public function notificaciones()
+    {
+        return $this->hasMany(NotificacionCliente::class, 'clientes_id');
+    }
+
     public function getInicialesAttribute(): string
     {
         $nombre = trim($this->nombre ?? '');

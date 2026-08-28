@@ -14,6 +14,17 @@
         dragOverColumn: null,
         pendingMove: null,
 
+        // Notificaciones por Email
+        enviarEmail: true,
+        mostrarPersonalizarMensaje: false,
+        mensajePersonalizado: '',
+
+        clienteTieneEmail(item) {
+            if (!item || !item.cliente_email) return false;
+            const email = String(item.cliente_email).trim().toLowerCase();
+            return email !== '' && email !== 'sin correo' && email !== 'no especificado' && email.includes('@');
+        },
+
         // Control de Clave de Acceso y Sub-modales
         openClaveSubModal: false,
         tipoClaveSeleccionada: {{ Js::from(old('clave_de_acceso') ? (str_starts_with(old('clave_de_acceso'), 'Patrón') || str_starts_with(old('clave_de_acceso'), 'Patron') ? 'Patrón de desbloqueo' : (str_starts_with(old('clave_de_acceso'), 'PIN') || (old('clave_de_acceso') !== 'Sin clave' && old('clave_de_acceso') !== 'Huella / Face ID') ? 'PIN / Contraseña' : old('clave_de_acceso'))) : 'Sin clave') }},
@@ -235,6 +246,9 @@
 
         detallesDeEntrega(item){
             this.selectedReparacion = item;
+            this.enviarEmail = this.clienteTieneEmail(item);
+            this.mostrarPersonalizarMensaje = false;
+            this.mensajePersonalizado = '';
             this.openConfirmEntregaModal = true;
         },
 
@@ -279,6 +293,9 @@
                 from: fromCol,
                 to: targetColumn
             };
+            this.enviarEmail = this.clienteTieneEmail(item);
+            this.mostrarPersonalizarMensaje = false;
+            this.mensajePersonalizado = '';
             this.openConfirmModal = true;
         },
 
@@ -287,10 +304,15 @@
             this.pendingMove = null;
             this.draggedItem = null;
             this.dragOverColumn = null;
+            this.mostrarPersonalizarMensaje = false;
+            this.mensajePersonalizado = '';
         },
 
         cancelarEntrega(){
             this.openConfirmEntregaModal = false;
+            this.selectedReparacion = null;
+            this.mostrarPersonalizarMensaje = false;
+            this.mensajePersonalizado = '';
         },
 
         async confirmarEntrega(){
@@ -308,7 +330,11 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ estado: 'entregado' })
+                    body: JSON.stringify({
+                        estado: 'entregado',
+                        enviar_email: this.enviarEmail && this.clienteTieneEmail(item),
+                        mensaje_personalizado: this.mensajePersonalizado ? this.mensajePersonalizado.trim() : null
+                    })
                 });
 
                 const data = await response.json();
@@ -327,6 +353,8 @@
 
                     this.openConfirmEntregaModal = false;
                     this.selectedReparacion = null;
+                    this.mostrarPersonalizarMensaje = false;
+                    this.mensajePersonalizado = '';
                 } else {
                     window.dispatchEvent(new CustomEvent('toast', {
                         detail: {
@@ -363,7 +391,11 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ estado: to })
+                    body: JSON.stringify({
+                        estado: to,
+                        enviar_email: this.enviarEmail && this.clienteTieneEmail(item),
+                        mensaje_personalizado: this.mensajePersonalizado ? this.mensajePersonalizado.trim() : null
+                    })
                 });
 
                 const data = await response.json();
@@ -404,6 +436,8 @@
                     this.openConfirmModal = false;
                     this.pendingMove = null;
                     this.draggedItem = null;
+                    this.mostrarPersonalizarMensaje = false;
+                    this.mensajePersonalizado = '';
                 } else {
                     window.dispatchEvent(new CustomEvent('toast', {
                         detail: {
@@ -1737,6 +1771,74 @@
                         </div>
                     </div>
 
+                    {{-- Notificación por Email al Cliente --}}
+                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30 flex flex-col gap-3">
+                        <template x-if="clienteTieneEmail(pendingMove?.item)">
+                            <div class="flex flex-col gap-3">
+                                {{-- Switch / Checkbox para activar envío --}}
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/30 shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <label for="modal-email-toggle-move" class="text-sm font-bold text-white cursor-pointer select-none">
+                                                Notificar al cliente por correo
+                                            </label>
+                                            <p class="text-xs text-text-secondary truncate max-w-[240px]" x-text="pendingMove?.item?.cliente_email"></p>
+                                        </div>
+                                    </div>
+
+                                    {{-- Toggle Switch --}}
+                                    <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                        <input
+                                            id="modal-email-toggle-move"
+                                            type="checkbox"
+                                            x-model="enviarEmail"
+                                            class="sr-only peer"
+                                        >
+                                        <div class="w-11 h-6 bg-[#273343] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary border border-white/10"></div>
+                                    </label>
+                                </div>
+
+                                {{-- Botón de Personalizar / Añadir Nota --}}
+                                <div x-show="enviarEmail">
+                                    <button
+                                        type="button"
+                                        @click="mostrarPersonalizarMensaje = !mostrarPersonalizarMensaje"
+                                        class="text-xs font-semibold text-primary-light hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer pt-1"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 transition-transform" :class="mostrarPersonalizarMensaje ? 'rotate-90' : ''">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                                        </svg>
+                                        <span x-text="mostrarPersonalizarMensaje ? 'Ocultar nota adicional' : '+ Añadir nota técnica al correo (opcional)'"></span>
+                                    </button>
+
+                                    <div x-show="mostrarPersonalizarMensaje" class="mt-2.5">
+                                        <textarea
+                                            x-model="mensajePersonalizado"
+                                            rows="2"
+                                            placeholder="Ej: Ya cambiamos la pantalla y está en etapa de pruebas finales..."
+                                            class="w-full rounded-xl bg-[#141c25] border border-border/40 p-2.5 text-xs text-white placeholder:text-text-disabled outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all resize-none"
+                                        ></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Caso: Cliente sin email registrado --}}
+                        <template x-if="!clienteTieneEmail(pendingMove?.item)">
+                            <div class="flex items-center gap-3 text-text-disabled bg-[#141c25]/80 p-2.5 rounded-xl border border-border/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-warning shrink-0">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                                </svg>
+                                <span class="text-xs font-medium">El cliente no tiene email registrado. Solo se cambiará el estado.</span>
+                            </div>
+                        </template>
+                    </div>
+
                 </div>
 
                 {{-- Botones de Acción --}}
@@ -1831,6 +1933,74 @@
                             <span class="text-sm font-bold text-white truncate" x-text="selectedReparacion?.cliente_nombre"></span>
                             <span class="text-xs font-semibold text-primary-light truncate max-w-[180px]" x-text="selectedReparacion?.dispositivo_marca_modelo"></span>
                         </div>
+                    </div>
+
+                    {{-- Notificación por Email al Cliente en Entrega --}}
+                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30 flex flex-col gap-3">
+                        <template x-if="clienteTieneEmail(selectedReparacion)">
+                            <div class="flex flex-col gap-3">
+                                {{-- Switch / Checkbox para activar envío --}}
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-success/15 text-success border border-success/30 shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <label for="modal-email-toggle-entrega" class="text-sm font-bold text-white cursor-pointer select-none">
+                                                Enviar comprobante de entrega por correo
+                                            </label>
+                                            <p class="text-xs text-text-secondary truncate max-w-[240px]" x-text="selectedReparacion?.cliente_email"></p>
+                                        </div>
+                                    </div>
+
+                                    {{-- Toggle Switch --}}
+                                    <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                        <input
+                                            id="modal-email-toggle-entrega"
+                                            type="checkbox"
+                                            x-model="enviarEmail"
+                                            class="sr-only peer"
+                                        >
+                                        <div class="w-11 h-6 bg-[#273343] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-success border border-white/10"></div>
+                                    </label>
+                                </div>
+
+                                {{-- Botón de Personalizar / Añadir Nota --}}
+                                <div x-show="enviarEmail">
+                                    <button
+                                        type="button"
+                                        @click="mostrarPersonalizarMensaje = !mostrarPersonalizarMensaje"
+                                        class="text-xs font-semibold text-success hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer pt-1"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 transition-transform" :class="mostrarPersonalizarMensaje ? 'rotate-90' : ''">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                                        </svg>
+                                        <span x-text="mostrarPersonalizarMensaje ? 'Ocultar nota adicional' : '+ Añadir nota técnica al correo (opcional)'"></span>
+                                    </button>
+
+                                    <div x-show="mostrarPersonalizarMensaje" class="mt-2.5">
+                                        <textarea
+                                            x-model="mensajePersonalizado"
+                                            rows="2"
+                                            placeholder="Ej: Se entregó con cargador y cable original verificado..."
+                                            class="w-full rounded-xl bg-[#141c25] border border-border/40 p-2.5 text-xs text-white placeholder:text-text-disabled outline-none focus:ring-1 focus:ring-success focus:border-success transition-all resize-none"
+                                        ></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Caso: Cliente sin email registrado --}}
+                        <template x-if="!clienteTieneEmail(selectedReparacion)">
+                            <div class="flex items-center gap-3 text-text-disabled bg-[#141c25]/80 p-2.5 rounded-xl border border-border/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-warning shrink-0">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                                </svg>
+                                <span class="text-xs font-medium">El cliente no tiene email registrado. Solo se cambiará el estado.</span>
+                            </div>
+                        </template>
                     </div>
                 </div>
 
