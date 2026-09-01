@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerificarEmailController;
+use App\Http\Controllers\Auth\OlvideController;
 use App\Http\Controllers\Clientes\ClientesController;
 use App\Http\Controllers\Cuenta\CuentaController;
 use App\Http\Controllers\Dashboard\DashboardController;
@@ -25,6 +26,9 @@ Route::get('/auth/register', [RegisterController::class, 'index'])->name('regist
 Route::post('/auth/register', [RegisterController::class, 'store'])->name('register.store');
 
 Route::post('/auth/logout', [LoginController::class, 'logout'])->name('login.logout');
+
+Route::get('/auth/olvide', [OlvideController::class, 'index'])->name('olvide.index');
+Route::post('/auth/olvide', [OlvideController::class, 'store'])->name('olvide.store');
 
 Route::get('/tu-negocio', [NegocioController::class, 'index'])->name('negocios')->middleware(['auth', 'have_negocios_id']);
 Route::post('/tu-negocio', [NegocioController::class, 'store'])->name('negocios.store');

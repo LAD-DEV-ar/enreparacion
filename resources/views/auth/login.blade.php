@@ -80,6 +80,12 @@
                             Regístrate
                         </a>
                     </p>
+                    <p class="text-center text-sm text-slate-400">
+                        ¿Olvidaste tu contraseña?
+                        <a href="{{ route('olvide.index') }}" class="text-[#0081cc] hover:text-[#33b4ff] font-semibold hover:underline transition-colors">
+                            Recupera tu contraseña
+                        </a>
+                    </p>
                 </form>
             </div>
 

@@ -34,6 +34,7 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+
     public function emailVerificationCodes()
     {
         return $this->hasMany(EmailVerificationCode::class, 'users_id');
