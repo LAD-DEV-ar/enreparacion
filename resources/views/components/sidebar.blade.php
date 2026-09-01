@@ -192,14 +192,14 @@
             </a>
 
             {{-- Logout --}}
-            <form method="POST" action="{{ route('logout') }}" class="mt-2">
+            <form method="POST" action="{{ route('login.logout') }}" class="mt-2">
                 @csrf
                 <button
                     type="submit"
-                    class="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-left transition-colors hover:bg-surface-hover"
+                    class="flex w-full h-full items-center gap-3 rounded-2xl px-4 py-4 text-left transition-colors hover:bg-surface-hover cursor-pointer"
                 >
 
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground text-text-secondary">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
@@ -216,7 +216,7 @@
                         </svg>
                     </div>
 
-                    <span class="font-semibold text-muted-foreground">
+                    <span class="font-semibold text-sm text-muted-foreground text-text-secondary">
                         Cerrar sesión
                     </span>
 
