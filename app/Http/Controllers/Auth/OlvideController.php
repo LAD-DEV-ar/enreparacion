@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Mail\OlvideContraseña;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 
 class OlvideController extends Controller
 {
@@ -27,11 +28,8 @@ class OlvideController extends Controller
         $user = User::where('email', $validated['email'])->first();
 
         $status = Password::sendResetLink(
-            $validated['email'],
+            $request->only('email'),
         );
-        $url = url('/reset-password' . '/' . $this->token);
-
-        Mail::to($user->email)->send(new OlvideContraseña($user));
 
         return redirect()->route('login')->with('success', 'Revisa tu Email!, Enviamos unas instrucciones');
     }

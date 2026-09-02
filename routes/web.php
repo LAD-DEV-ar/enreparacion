@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerificarEmailController;
 use App\Http\Controllers\Auth\OlvideController;
+use App\Http\Controllers\Auth\RecuperarController;
 use App\Http\Controllers\Clientes\ClientesController;
 use App\Http\Controllers\Cuenta\CuentaController;
 use App\Http\Controllers\Dashboard\DashboardController;
@@ -30,6 +31,9 @@ Route::post('/auth/logout', [LoginController::class, 'logout'])->name('login.log
 Route::get('/auth/olvide', [OlvideController::class, 'index'])->name('olvide.index');
 Route::post('/auth/olvide', [OlvideController::class, 'store'])->name('olvide.store');
 
+Route::get('/reset-password/{token}', [RecuperarController::class, 'index'])->name('password.reset');
+Route::post('/reset-password', [RecuperarController::class, 'store'])->name('password.store');
+
 Route::get('/tu-negocio', [NegocioController::class, 'index'])->name('negocios')->middleware(['auth', 'have_negocios_id']);
 Route::post('/tu-negocio', [NegocioController::class, 'store'])->name('negocios.store');
 
@@ -44,3 +48,4 @@ Route::patch('/reparaciones/{reparacion}/notas', [ReparacionesController::class,
 Route::get('/clientes', [ClientesController::class, 'index'])->name('clientes.index')->middleware(['auth', 'negocios_id']);
 Route::post('/clientes', [ClientesController::class, 'store'])->name('clientes.store')->middleware(['auth', 'negocios_id']);
 Route::get('/cuenta/configuracion', [CuentaController::class, 'index'])->name('cuenta.index')->middleware(['auth', 'negocios_id']);
+

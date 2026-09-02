@@ -196,7 +196,7 @@
                 @csrf
                 <button
                     type="submit"
-                    class="flex w-full h-full items-center gap-3 rounded-2xl px-4 py-4 text-left transition-colors hover:bg-surface-hover cursor-pointer"
+                    class="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-left transition-colors hover:bg-surface-hover cursor-pointer"
                 >
 
                     <div class="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground text-text-secondary">
