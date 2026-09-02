@@ -48,4 +48,7 @@ Route::patch('/reparaciones/{reparacion}/notas', [ReparacionesController::class,
 Route::get('/clientes', [ClientesController::class, 'index'])->name('clientes.index')->middleware(['auth', 'negocios_id']);
 Route::post('/clientes', [ClientesController::class, 'store'])->name('clientes.store')->middleware(['auth', 'negocios_id']);
 Route::get('/cuenta/configuracion', [CuentaController::class, 'index'])->name('cuenta.index')->middleware(['auth', 'negocios_id']);
+Route::patch('/cuenta/perfil', [CuentaController::class, 'updatePerfil'])->name('cuenta.update-perfil')->middleware(['auth', 'negocios_id']);
+Route::patch('/cuenta/negocio', [CuentaController::class, 'updateNegocio'])->name('cuenta.update-negocio')->middleware(['auth', 'negocios_id']);
+Route::patch('/cuenta/password', [CuentaController::class, 'updatePassword'])->name('cuenta.update-password')->middleware(['auth', 'negocios_id']);
 
