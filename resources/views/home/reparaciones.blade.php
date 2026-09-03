@@ -20,6 +20,7 @@
             notasEditadas: '',
             copiadoCodigo: false,
             copiadoImei: false,
+            rateLimiting: false,
 
             // Filtrado reactivo instantáneo (Buscador híbrido + Píldoras de estado)
             filtradas() {
@@ -100,10 +101,23 @@
                 });
             },
 
+            setRateLimiting() {
+                this.rateLimiting = true;
+                setTimeout( () => {
+                    this.rateLimiting = false;
+                }, 3000);
+            },
+
             // Actualización de estado en vivo vía AJAX
             async cambiarEstado(nuevoEstado) {
-                if (!this.selectedReparacion || this.isUpdatingStatus) return;
+                if (this.rateLimiting) {
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'No puedes cambiar tan rapido de estado', type: 'warning' }
+                    }));
+                }
+                if (!this.selectedReparacion || this.isUpdatingStatus || this.rateLimiting) return;
                 this.isUpdatingStatus = true;
+                this.setRateLimiting();
                 const repId = this.selectedReparacion.id;
 
                 try {
