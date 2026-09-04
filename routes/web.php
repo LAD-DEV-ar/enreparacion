@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\RecuperarController;
 use App\Http\Controllers\Clientes\ClientesController;
 use App\Http\Controllers\Cuenta\CuentaController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dispositivos\DispositivosController;
 use App\Http\Controllers\Negocios\NegocioController;
 use App\Http\Controllers\Reparacionse\ReparacionesController;
 use Illuminate\Support\Facades\Route;
@@ -43,10 +44,13 @@ Route::post('/verificar-email/reenviar', [VerificarEmailController::class, 'rese
 
 Route::get('/reparaciones', [ReparacionesController::class, 'index'])->name('reparaciones.index')->middleware(['auth', 'negocios_id']);
 Route::post('/reparaciones', [ReparacionesController::class, 'store'])->name('reparaciones.store')->middleware(['auth', 'negocios_id']);
+Route::patch('/reparaciones/{reparacion}', [ReparacionesController::class, 'update'])->name('reparaciones.update')->middleware(['auth', 'negocios_id']);
 Route::patch('/reparaciones/{reparacion}/estado', [ReparacionesController::class, 'updateEstado'])->name('reparaciones.update-estado')->middleware(['auth', 'negocios_id']);
 Route::patch('/reparaciones/{reparacion}/notas', [ReparacionesController::class, 'updateNotas'])->name('reparaciones.update-notas')->middleware(['auth', 'negocios_id']);
 Route::get('/clientes', [ClientesController::class, 'index'])->name('clientes.index')->middleware(['auth', 'negocios_id']);
 Route::post('/clientes', [ClientesController::class, 'store'])->name('clientes.store')->middleware(['auth', 'negocios_id']);
+Route::patch('/clientes/{cliente}', [ClientesController::class, 'update'])->name('clientes.update')->middleware(['auth', 'negocios_id']);
+Route::patch('/dispositivos/{dispositivo}', [DispositivosController::class, 'update'])->name('dispositivos.update')->middleware(['auth', 'negocios_id']);
 Route::get('/cuenta/configuracion', [CuentaController::class, 'index'])->name('cuenta.index')->middleware(['auth', 'negocios_id']);
 Route::patch('/cuenta/perfil', [CuentaController::class, 'updatePerfil'])->name('cuenta.update-perfil')->middleware(['auth', 'negocios_id']);
 Route::patch('/cuenta/negocio', [CuentaController::class, 'updateNegocio'])->name('cuenta.update-negocio')->middleware(['auth', 'negocios_id']);

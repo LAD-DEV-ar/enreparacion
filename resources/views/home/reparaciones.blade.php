@@ -37,14 +37,53 @@
             openPrintModal: false,
             selectedReparacion: null,
 
+            // Modal de confirmación unificado (Cambio de estado / Entrega)
+            confirmModal: {
+                open: false,
+                loading: false,
+                item: null,
+                from: null,
+                to: null,
+            },
+
+            // Notificaciones por Email
+            enviarEmail: true,
+            mostrarPersonalizarMensaje: false,
+            mensajePersonalizado: '',
+
             // Acciones asíncronas
             isUpdatingStatus: false,
             isSavingNotas: false,
             notasEditadas: '',
             copiadoCodigo: false,
             copiadoImei: false,
-            rateLimiting: false,
 
+            rateLimiting: false,
+            alertRateLimiting(){
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: { message: 'No puedes cambiar tan rapido de estado', type: 'warning' }
+                }));
+            },
+
+            // Control de edición por cards en el Slide-Over
+            editCard: {
+                cliente: false,
+                dispositivo: false,
+                falla: false,
+                financiero: false,
+            },
+            isSavingCard: {
+                cliente: false,
+                dispositivo: false,
+                falla: false,
+                financiero: false,
+            },
+            formCard: {
+                cliente: { nombre: '', telefono: '', email: '' },
+                dispositivo: { marca_y_modelo: '', imei_o_serie: '', clave_de_acceso: '' },
+                falla: { falla_reportada: '' },
+                financiero: { costo_estimado: 0, sena: 0 }
+            },
 
             // Filtrado reactivo instantáneo (Buscador híbrido + Píldoras de estado)
             filtradas() {
@@ -87,6 +126,10 @@
             abrirSlideOver(rep) {
                 this.selectedReparacion = rep;
                 this.notasEditadas = rep.notas_internas || '';
+                this.editCard.cliente = false;
+                this.editCard.dispositivo = false;
+                this.editCard.falla = false;
+                this.editCard.financiero = false;
                 this.openSlideOver = true;
             },
 
@@ -132,20 +175,64 @@
                 }, 3000);
             },
 
-            // Actualización de estado en vivo vía AJAX
-            async cambiarEstado(nuevoEstado) {
+            clienteTieneEmail(item) {
+                if (!item || !item.cliente_email) return false;
+                const email = String(item.cliente_email).trim().toLowerCase();
+                return email !== '' && email !== 'sin correo' && email !== 'no especificado' && email.includes('@');
+            },
+
+            columnaLabel(key) {
+                if (key === 'recibido') return 'Recibido';
+                if (key === 'en_reparacion') return 'En reparación';
+                if (key === 'listo') return 'Listo';
+                if (key === 'entregado') return 'Entregado';
+                if (key === 'cancelado') return 'Cancelado';
+                return key || '';
+            },
+
+            // Abre el modal de confirmación con opciones de notificación por email
+            cambiarEstado(nuevoEstado) {
+                if (!this.selectedReparacion) return;
+                if (this.rateLimiting) return this.alertRateLimiting();
+                if (this.selectedReparacion.estado_slug === nuevoEstado) return;
+                this.abrirModalConfirmacion(this.selectedReparacion, this.selectedReparacion.estado_slug, nuevoEstado);
+            },
+
+            abrirModalConfirmacion(item, from, to) {
+                this.confirmModal = {
+                    open: true,
+                    loading: false,
+                    item: item,
+                    from: from,
+                    to: to,
+                };
+                this.enviarEmail = this.clienteTieneEmail(item);
+                this.mostrarPersonalizarMensaje = false;
+                this.mensajePersonalizado = '';
+            },
+
+            cerrarModalConfirmacion() {
+                this.confirmModal.open = false;
+                this.confirmModal.item = null;
+                this.confirmModal.from = null;
+                this.confirmModal.to = null;
+                this.mostrarPersonalizarMensaje = false;
+                this.mensajePersonalizado = '';
+            },
+
+            async confirmarCambioEstado() {
                 if (this.rateLimiting) {
-                    window.dispatchEvent(new CustomEvent('toast', {
-                        detail: { message: 'No puedes cambiar tan rapido de estado', type: 'warning' }
-                    }));
+                    return this.alertRateLimiting();
                 }
                 if (!this.selectedReparacion || this.isUpdatingStatus || this.rateLimiting) return;
-                this.isUpdatingStatus = true;
                 this.setRateLimiting();
-                const repId = this.selectedReparacion.id;
+
+                this.confirmModal.loading = true;
+                const { item, from, to } = this.confirmModal;
+                const isEntrega = to === 'entregado';
 
                 try {
-                    const url = `{{ url('/reparaciones') }}/${repId}/estado`;
+                    const url = `{{ url('/reparaciones') }}/${item.id}/estado`;
                     const response = await fetch(url, {
                         method: 'PATCH',
                         headers: {
@@ -153,34 +240,49 @@
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
-                        body: JSON.stringify({ estado: nuevoEstado })
+                        body: JSON.stringify({
+                            estado: to,
+                            enviar_email: this.enviarEmail && this.clienteTieneEmail(item),
+                            mensaje_personalizado: this.mensajePersonalizado ? this.mensajePersonalizado.trim() : null
+                        })
                     });
 
                     const data = await response.json();
+
                     if (response.ok && data.success) {
-                        const idx = this.reparaciones.findIndex(r => r.id === repId);
+                        const idx = this.reparaciones.findIndex(r => r.id === item.id);
                         if (idx !== -1) {
                             this.reparaciones[idx].estado = data.estado;
                             this.reparaciones[idx].estado_slug = data.estado_slug;
                             this.reparaciones[idx].dot_color = data.dot_color;
-                            this.selectedReparacion = { ...this.reparaciones[idx] };
+                            if (this.selectedReparacion && this.selectedReparacion.id === item.id) {
+                                this.selectedReparacion = { ...this.reparaciones[idx] };
+                            }
                         }
 
                         window.dispatchEvent(new CustomEvent('toast', {
-                            detail: { message: data.message || 'Estado actualizado.', type: 'success' }
+                            detail: {
+                                message: data.message || (isEntrega ? 'Reparación marcada como entregada.' : `Estado actualizado a ${this.columnaLabel(to)}`),
+                                type: 'success'
+                            }
                         }));
+
+                        this.cerrarModalConfirmacion();
                     } else {
                         window.dispatchEvent(new CustomEvent('toast', {
-                            detail: { message: data.message || 'Error al actualizar el estado.', type: 'error' }
+                            detail: {
+                                message: data.message || 'Error al actualizar el estado de la reparación.',
+                                type: 'error'
+                            }
                         }));
                     }
                 } catch (e) {
-                    console.error(e);
+                    console.error('Error al actualizar estado:', e);
                     window.dispatchEvent(new CustomEvent('toast', {
-                        detail: { message: 'Hubo un error de conexión.', type: 'error' }
+                        detail: { message: 'Hubo un error de conexión al actualizar el estado.', type: 'error' }
                     }));
                 } finally {
-                    this.isUpdatingStatus = false;
+                    this.confirmModal.loading = false;
                 }
             },
 
@@ -242,6 +344,324 @@
 
                 const texto = `Hola ${rep.cliente_nombre}, te escribimos de ${rep.negocio_nombre} sobre tu equipo ${rep.dispositivo_marca_modelo} (Orden ${rep.codigo_seguimiento}). Estado actual: ${rep.estado}. ¡Saludos!`;
                 return `https://wa.me/${raw}?text=${encodeURIComponent(texto)}`;
+            },
+
+            // Acciones de edición por Cards en el Slide-Over
+            iniciarEdicion(card) {
+                if (!this.selectedReparacion) return;
+                if (card === 'cliente') {
+                    this.formCard.cliente = {
+                        nombre: this.selectedReparacion.cliente_nombre || '',
+                        telefono: this.selectedReparacion.cliente_telefono || '',
+                        email: (this.selectedReparacion.cliente_email && this.selectedReparacion.cliente_email !== 'Sin correo') ? this.selectedReparacion.cliente_email : ''
+                    };
+                } else if (card === 'dispositivo') {
+                    this.formCard.dispositivo = {
+                        marca_y_modelo: this.selectedReparacion.dispositivo_marca_modelo || '',
+                        imei_o_serie: (this.selectedReparacion.imei_o_serie && this.selectedReparacion.imei_o_serie !== 'No especificado') ? this.selectedReparacion.imei_o_serie : '',
+                        clave_de_acceso: (this.selectedReparacion.clave_de_acceso && this.selectedReparacion.clave_de_acceso !== 'Sin clave') ? this.selectedReparacion.clave_de_acceso : ''
+                    };
+                } else if (card === 'falla') {
+                    this.formCard.falla = {
+                        falla_reportada: (this.selectedReparacion.falla_reportada && this.selectedReparacion.falla_reportada !== 'No especificada') ? this.selectedReparacion.falla_reportada : ''
+                    };
+                } else if (card === 'financiero') {
+                    this.formCard.financiero = {
+                        costo_estimado: this.selectedReparacion.costo_estimado_num || 0,
+                        sena: this.selectedReparacion.sena_num || 0
+                    };
+                }
+                this.editCard[card] = true;
+            },
+
+            cancelarEdicion(card) {
+                this.editCard[card] = false;
+            },
+
+            actualizarSearchTarget(r) {
+                r.search_target = String(
+                    (r.cliente_nombre || '') + ' ' +
+                    (r.codigo_seguimiento || '') + ' ' +
+                    (r.codigo_limpio || '') + ' ' +
+                    (r.dispositivo_marca_modelo || '') + ' ' +
+                    (r.imei_o_serie || '') + ' ' +
+                    (r.cliente_telefono || '') + ' ' +
+                    (r.falla_reportada || '') + ' ' +
+                    (r.notas_internas || '') + ' ' +
+                    (r.estado || '') + ' ' +
+                    (r.tecnico || '')
+                ).toLowerCase();
+            },
+
+            saldoPreviewForm() {
+                const costo = Math.max(0, Number(this.formCard.financiero.costo_estimado) || 0);
+                const sena = Math.max(0, Number(this.formCard.financiero.sena) || 0);
+                const saldo = Math.max(0, costo - sena);
+                return '$' + new Intl.NumberFormat('es-AR').format(saldo);
+            },
+
+            get totalPendienteCobroActual() {
+                const total = this.reparaciones.reduce((acc, r) => acc + (Number(r.saldo_pendiente_num) || 0), 0);
+                return '$' + new Intl.NumberFormat('es-AR').format(total);
+            },
+
+            async guardarCliente() {
+                if (!this.selectedReparacion || this.isSavingCard.cliente) return;
+                const nombre = (this.formCard.cliente.nombre || '').trim();
+                const telefono = (this.formCard.cliente.telefono || '').trim();
+                const email = (this.formCard.cliente.email || '').trim();
+
+                if (!nombre) {
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'El nombre del cliente es obligatorio.', type: 'error' }
+                    }));
+                    return;
+                }
+                if (!telefono) {
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'El teléfono del cliente es obligatorio.', type: 'error' }
+                    }));
+                    return;
+                }
+
+                this.isSavingCard.cliente = true;
+                try {
+                    const url = `{{ url('/clientes') }}/${this.selectedReparacion.cliente_id}`;
+                    const response = await fetch(url, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ nombre, telefono, email: email || null })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok && data.success) {
+                        const c = data.cliente;
+                        this.selectedReparacion.cliente_nombre = c.nombre;
+                        this.selectedReparacion.cliente_telefono = c.telefono;
+                        this.selectedReparacion.cliente_email = c.email;
+                        this.selectedReparacion.cliente_iniciales = c.iniciales;
+                        this.selectedReparacion.whatsapp_url = c.whatsapp_url;
+
+                        this.reparaciones.forEach(r => {
+                            if (r.cliente_id === c.id) {
+                                r.cliente_nombre = c.nombre;
+                                r.cliente_telefono = c.telefono;
+                                r.cliente_email = c.email;
+                                r.cliente_iniciales = c.iniciales;
+                                r.whatsapp_url = c.whatsapp_url;
+                                this.actualizarSearchTarget(r);
+                            }
+                        });
+
+                        this.editCard.cliente = false;
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { message: data.message || 'Cliente actualizado con éxito.', type: 'success' }
+                        }));
+                    } else {
+                        const msg = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Error al actualizar cliente.');
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: msg, type: 'error' } }));
+                    }
+                } catch (e) {
+                    console.error(e);
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'Error de conexión al actualizar cliente.', type: 'error' }
+                    }));
+                } finally {
+                    this.isSavingCard.cliente = false;
+                }
+            },
+
+            async guardarDispositivo() {
+                if (!this.selectedReparacion || this.isSavingCard.dispositivo) return;
+                const marca_y_modelo = (this.formCard.dispositivo.marca_y_modelo || '').trim();
+                const imei_o_serie = (this.formCard.dispositivo.imei_o_serie || '').trim();
+                const clave_de_acceso = (this.formCard.dispositivo.clave_de_acceso || '').trim();
+
+                if (!marca_y_modelo) {
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'La marca y modelo son obligatorios.', type: 'error' }
+                    }));
+                    return;
+                }
+
+                this.isSavingCard.dispositivo = true;
+                try {
+                    const urlDisp = `{{ url('/dispositivos') }}/${this.selectedReparacion.dispositivo_id}`;
+                    const resDisp = await fetch(urlDisp, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ marca_y_modelo, imei_o_serie: imei_o_serie || null })
+                    });
+
+                    const dataDisp = await resDisp.json();
+                    if (!resDisp.ok || !dataDisp.success) {
+                        const msg = dataDisp.errors ? Object.values(dataDisp.errors).flat().join(' ') : (dataDisp.message || 'Error al actualizar dispositivo.');
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: msg, type: 'error' } }));
+                        return;
+                    }
+
+                    // Si se modificó la clave de acceso, actualizar también la reparación
+                    const claveActual = (this.selectedReparacion.clave_de_acceso === 'Sin clave') ? '' : (this.selectedReparacion.clave_de_acceso || '');
+                    if (clave_de_acceso !== claveActual) {
+                        const urlRep = `{{ url('/reparaciones') }}/${this.selectedReparacion.id}`;
+                        const resRep = await fetch(urlRep, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({ clave_de_acceso: clave_de_acceso || null })
+                        });
+                        const dataRep = await resRep.json();
+                        if (resRep.ok && dataRep.success) {
+                            this.selectedReparacion.clave_de_acceso = dataRep.reparacion.clave_de_acceso;
+                        }
+                    }
+
+                    const d = dataDisp.dispositivo;
+                    this.selectedReparacion.dispositivo_marca_modelo = d.marca_y_modelo;
+                    this.selectedReparacion.imei_o_serie = d.imei_o_serie;
+
+                    const idx = this.reparaciones.findIndex(r => r.id === this.selectedReparacion.id);
+                    if (idx !== -1) {
+                        this.reparaciones[idx].dispositivo_marca_modelo = d.marca_y_modelo;
+                        this.reparaciones[idx].imei_o_serie = d.imei_o_serie;
+                        this.reparaciones[idx].clave_de_acceso = this.selectedReparacion.clave_de_acceso;
+                        this.actualizarSearchTarget(this.reparaciones[idx]);
+                    }
+
+                    this.editCard.dispositivo = false;
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'Dispositivo y seguridad actualizados correctamente.', type: 'success' }
+                    }));
+                } catch (e) {
+                    console.error(e);
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'Error de conexión al actualizar dispositivo.', type: 'error' }
+                    }));
+                } finally {
+                    this.isSavingCard.dispositivo = false;
+                }
+            },
+
+            async guardarFalla() {
+                if (!this.selectedReparacion || this.isSavingCard.falla) return;
+                const falla = (this.formCard.falla.falla_reportada || '').trim();
+
+                if (!falla) {
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'La falla reportada no puede estar vacía.', type: 'error' }
+                    }));
+                    return;
+                }
+
+                this.isSavingCard.falla = true;
+                try {
+                    const url = `{{ url('/reparaciones') }}/${this.selectedReparacion.id}`;
+                    const response = await fetch(url, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ falla_reportada: falla })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok && data.success) {
+                        const rep = data.reparacion;
+                        this.selectedReparacion.falla_reportada = rep.falla_reportada;
+
+                        const idx = this.reparaciones.findIndex(r => r.id === this.selectedReparacion.id);
+                        if (idx !== -1) {
+                            this.reparaciones[idx].falla_reportada = rep.falla_reportada;
+                            this.actualizarSearchTarget(this.reparaciones[idx]);
+                        }
+
+                        this.editCard.falla = false;
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { message: 'Diagnóstico actualizado con éxito.', type: 'success' }
+                        }));
+                    } else {
+                        const msg = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Error al actualizar falla.');
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: msg, type: 'error' } }));
+                    }
+                } catch (e) {
+                    console.error(e);
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'Error de conexión al actualizar diagnóstico.', type: 'error' }
+                    }));
+                } finally {
+                    this.isSavingCard.falla = false;
+                }
+            },
+
+            async guardarFinanciero() {
+                if (!this.selectedReparacion || this.isSavingCard.financiero) return;
+                const costo = Math.max(0, Number(this.formCard.financiero.costo_estimado) || 0);
+                const sena = Math.max(0, Number(this.formCard.financiero.sena) || 0);
+
+                this.isSavingCard.financiero = true;
+                try {
+                    const url = `{{ url('/reparaciones') }}/${this.selectedReparacion.id}`;
+                    const response = await fetch(url, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ costo_estimado: costo, sena: sena })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok && data.success) {
+                        const rep = data.reparacion;
+                        this.selectedReparacion.costo_estimado = rep.costo_estimado;
+                        this.selectedReparacion.costo_estimado_num = rep.costo_estimado_num;
+                        this.selectedReparacion.sena = rep.sena;
+                        this.selectedReparacion.sena_num = rep.sena_num;
+                        this.selectedReparacion.saldo_pendiente = rep.saldo_pendiente;
+                        this.selectedReparacion.saldo_pendiente_num = rep.saldo_pendiente_num;
+                        this.selectedReparacion.esta_saldado = rep.esta_saldado;
+
+                        const idx = this.reparaciones.findIndex(r => r.id === this.selectedReparacion.id);
+                        if (idx !== -1) {
+                            this.reparaciones[idx].costo_estimado = rep.costo_estimado;
+                            this.reparaciones[idx].costo_estimado_num = rep.costo_estimado_num;
+                            this.reparaciones[idx].sena = rep.sena;
+                            this.reparaciones[idx].sena_num = rep.sena_num;
+                            this.reparaciones[idx].saldo_pendiente = rep.saldo_pendiente;
+                            this.reparaciones[idx].saldo_pendiente_num = rep.saldo_pendiente_num;
+                            this.reparaciones[idx].esta_saldado = rep.esta_saldado;
+                        }
+
+                        this.editCard.financiero = false;
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { message: 'Estado financiero actualizado correctamente.', type: 'success' }
+                        }));
+                    } else {
+                        const msg = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Error al actualizar balance.');
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { message: msg, type: 'error' } }));
+                    }
+                } catch (e) {
+                    console.error(e);
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'Error de conexión al actualizar balance.', type: 'error' }
+                    }));
+                } finally {
+                    this.isSavingCard.financiero = false;
+                }
             }
         }"
     >
@@ -431,7 +851,7 @@
                         </span>
                         <span>•</span>
                         <span>
-                            Por cobrar: <strong class="text-amber-400 font-bold">${{ number_format($totalPendienteCobro, 0, ',', '.') }}</strong>
+                            Por cobrar: <strong class="text-amber-400 font-bold" x-text="totalPendienteCobroActual"></strong>
                         </span>
                     </div>
 
@@ -546,7 +966,20 @@
                                     </svg>
                                 </button>
 
-                                {{-- 2. Ícono de Flecha (>) / Detalle --}}
+                                {{-- 2. Ícono de Edición Rápida --}}
+                                <button
+                                    type="button"
+                                    @click.stop="abrirSlideOver(item)"
+                                    class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#141c25] border border-border/40 text-text-disabled hover:text-white hover:border-primary/60 hover:bg-primary/20 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer shadow-sm"
+                                    title="Editar orden / datos"
+                                    aria-label="Editar orden"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                    </svg>
+                                </button>
+
+                                {{-- 3. Ícono de Flecha (>) / Detalle --}}
                                 <button
                                     type="button"
                                     @click.stop="abrirSlideOver(item)"
@@ -806,19 +1239,36 @@
                                             Cliente
                                         </span>
 
-                                        {{-- Botón rápido WhatsApp --}}
-                                        <a
-                                            :href="mensajeWhatsapp(selectedReparacion)"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 rounded-lg border border-emerald-500/30 transition-all"
-                                        >
-                                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
-                                            <span>WhatsApp</span>
-                                        </a>
+                                        <div class="flex items-center gap-2">
+                                            {{-- Botón Editar Cliente --}}
+                                            <button
+                                                type="button"
+                                                x-show="!editCard.cliente"
+                                                @click="iniciarEdicion('cliente')"
+                                                class="inline-flex items-center gap-1 text-xs font-semibold text-primary-light hover:text-white bg-primary/15 hover:bg-primary/30 px-2 py-0.5 rounded-lg border border-primary/30 transition-all cursor-pointer"
+                                                title="Editar datos del cliente"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                                </svg>
+                                                <span>Editar</span>
+                                            </button>
+
+                                            {{-- Botón rápido WhatsApp --}}
+                                            <a
+                                                :href="mensajeWhatsapp(selectedReparacion)"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 rounded-lg border border-emerald-500/30 transition-all"
+                                            >
+                                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+                                                <span>WhatsApp</span>
+                                            </a>
+                                        </div>
                                     </div>
 
-                                    <div class="flex items-center gap-3">
+                                    {{-- Vista Normal --}}
+                                    <div x-show="!editCard.cliente" class="flex items-center gap-3">
                                         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/20 border border-primary/30 text-primary-light font-bold text-lg" x-text="selectedReparacion.cliente_iniciales"></div>
                                         <div class="flex flex-col min-w-0">
                                             <span class="text-base font-bold text-white truncate" x-text="selectedReparacion.cliente_nombre"></span>
@@ -830,19 +1280,63 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    {{-- Modo Edición Formulario --}}
+                                    <div x-show="editCard.cliente" x-cloak class="flex flex-col gap-2.5 pt-1">
+                                        <div>
+                                            <label class="text-[11px] font-semibold text-text-disabled block mb-1">Nombre Completo *</label>
+                                            <input type="text" x-model="formCard.cliente.nombre" class="w-full rounded-xl bg-[#141c25] px-3 py-2 text-xs font-medium text-white border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all" placeholder="Ej: Juan Pérez">
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="text-[11px] font-semibold text-text-disabled block mb-1">Teléfono *</label>
+                                                <input type="text" x-model="formCard.cliente.telefono" class="w-full rounded-xl bg-[#141c25] px-3 py-2 text-xs font-medium text-white border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all" placeholder="Ej: 1123456789">
+                                            </div>
+                                            <div>
+                                                <label class="text-[11px] font-semibold text-text-disabled block mb-1">Email</label>
+                                                <input type="email" x-model="formCard.cliente.email" class="w-full rounded-xl bg-[#141c25] px-3 py-2 text-xs font-medium text-white border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all" placeholder="cliente@correo.com">
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-end gap-2 pt-1.5 border-t border-border/20 mt-1">
+                                            <button type="button" @click="cancelarEdicion('cliente')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-text-disabled hover:text-white hover:bg-surface transition-colors cursor-pointer">Cancelar</button>
+                                            <button type="button" :disabled="isSavingCard.cliente" @click="guardarCliente()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-xs font-bold text-white transition-all shadow-sm cursor-pointer disabled:opacity-50">
+                                                <svg x-show="isSavingCard.cliente" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                                </svg>
+                                                <span x-text="isSavingCard.cliente ? 'Guardando...' : 'Guardar'"></span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
 
                                 {{-- SECCIÓN 3: FICHA TÉCNICA DEL DISPOSITIVO --}}
                                 <div class="rounded-2xl bg-[#1c2530] p-4.5 border border-border/30 flex flex-col gap-3">
-                                    <span class="text-xs font-bold text-text-disabled uppercase tracking-wider flex items-center gap-1.5 border-b border-border/20 pb-2.5">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-primary">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-                                        </svg>
-                                        Dispositivo & Seguridad
-                                    </span>
+                                    <div class="flex items-center justify-between border-b border-border/20 pb-2.5">
+                                        <span class="text-xs font-bold text-text-disabled uppercase tracking-wider flex items-center gap-1.5">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-primary">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                                            </svg>
+                                            Dispositivo & Seguridad
+                                        </span>
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                        <button
+                                            type="button"
+                                            x-show="!editCard.dispositivo"
+                                            @click="iniciarEdicion('dispositivo')"
+                                            class="inline-flex items-center gap-1 text-xs font-semibold text-primary-light hover:text-white bg-primary/15 hover:bg-primary/30 px-2 py-0.5 rounded-lg border border-primary/30 transition-all cursor-pointer"
+                                            title="Editar dispositivo y clave"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                            </svg>
+                                            <span>Editar</span>
+                                        </button>
+                                    </div>
+
+                                    {{-- Vista Normal --}}
+                                    <div x-show="!editCard.dispositivo" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                                         <div class="rounded-xl bg-[#141c25] p-3 border border-border/20">
                                             <span class="text-text-disabled font-semibold block">Modelo</span>
                                             <span class="text-white font-bold text-sm mt-0.5 block" x-text="selectedReparacion.dispositivo_marca_modelo"></span>
@@ -869,18 +1363,83 @@
                                             </template>
                                         </div>
                                     </div>
+
+                                    {{-- Modo Edición Formulario --}}
+                                    <div x-show="editCard.dispositivo" x-cloak class="flex flex-col gap-2.5 pt-1">
+                                        <div>
+                                            <label class="text-[11px] font-semibold text-text-disabled block mb-1">Marca y Modelo *</label>
+                                            <input type="text" x-model="formCard.dispositivo.marca_y_modelo" class="w-full rounded-xl bg-[#141c25] px-3 py-2 text-xs font-medium text-white border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all" placeholder="Ej: iPhone 13 Pro">
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="text-[11px] font-semibold text-text-disabled block mb-1">IMEI / Número de Serie</label>
+                                                <input type="text" x-model="formCard.dispositivo.imei_o_serie" class="w-full rounded-xl bg-[#141c25] px-3 py-2 text-xs font-medium text-white border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all" placeholder="Ej: 354892019283741">
+                                            </div>
+                                            <div>
+                                                <label class="text-[11px] font-semibold text-text-disabled block mb-1">Clave de Acceso / PIN</label>
+                                                <input type="text" x-model="formCard.dispositivo.clave_de_acceso" class="w-full rounded-xl bg-[#141c25] px-3 py-2 text-xs font-medium text-amber-300 font-mono border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all" placeholder="Ej: 1234 o Patrón">
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-end gap-2 pt-1.5 border-t border-border/20 mt-1">
+                                            <button type="button" @click="cancelarEdicion('dispositivo')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-text-disabled hover:text-white hover:bg-surface transition-colors cursor-pointer">Cancelar</button>
+                                            <button type="button" :disabled="isSavingCard.dispositivo" @click="guardarDispositivo()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-xs font-bold text-white transition-all shadow-sm cursor-pointer disabled:opacity-50">
+                                                <svg x-show="isSavingCard.dispositivo" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                                </svg>
+                                                <span x-text="isSavingCard.dispositivo ? 'Guardando...' : 'Guardar'"></span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
 
                                 {{-- SECCIÓN 4: DIAGNÓSTICO Y FALLA REPORTADA --}}
                                 <div class="rounded-2xl bg-[#1c2530] p-4.5 border border-border/30 flex flex-col gap-2">
-                                    <span class="text-xs font-bold text-text-disabled uppercase tracking-wider flex items-center gap-1.5">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-warning">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                                        </svg>
-                                        Falla Reportada
-                                    </span>
-                                    <div class="rounded-xl bg-[#141c25] p-3.5 border border-border/20 text-sm text-white font-medium whitespace-pre-wrap leading-relaxed" x-text="selectedReparacion.falla_reportada"></div>
+                                    <div class="flex items-center justify-between border-b border-border/20 pb-2.5">
+                                        <span class="text-xs font-bold text-text-disabled uppercase tracking-wider flex items-center gap-1.5">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-warning">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                                            </svg>
+                                            Falla Reportada
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            x-show="!editCard.falla"
+                                            @click="iniciarEdicion('falla')"
+                                            class="inline-flex items-center gap-1 text-xs font-semibold text-warning hover:text-white bg-warning/15 hover:bg-warning/30 px-2 py-0.5 rounded-lg border border-warning/30 transition-all cursor-pointer"
+                                            title="Editar falla reportada"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                            </svg>
+                                            <span>Editar</span>
+                                        </button>
+                                    </div>
+
+                                    {{-- Vista Normal --}}
+                                    <div x-show="!editCard.falla" class="rounded-xl bg-[#141c25] p-3.5 border border-border/20 text-sm text-white font-medium whitespace-pre-wrap leading-relaxed" x-text="selectedReparacion.falla_reportada"></div>
+
+                                    {{-- Modo Edición Formulario --}}
+                                    <div x-show="editCard.falla" x-cloak class="flex flex-col gap-2.5 pt-1">
+                                        <textarea
+                                            x-model="formCard.falla.falla_reportada"
+                                            rows="3"
+                                            class="w-full rounded-xl bg-[#141c25] p-3 text-xs sm:text-sm font-medium text-white placeholder:text-text-disabled outline-none border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all resize-none"
+                                            placeholder="Detalla el problema o motivo de ingreso reportado por el cliente..."
+                                        ></textarea>
+                                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-border/20">
+                                            <button type="button" @click="cancelarEdicion('falla')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-text-disabled hover:text-white hover:bg-surface transition-colors cursor-pointer">Cancelar</button>
+                                            <button type="button" :disabled="isSavingCard.falla" @click="guardarFalla()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-xs font-bold text-white transition-all shadow-sm cursor-pointer disabled:opacity-50">
+                                                <svg x-show="isSavingCard.falla" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                                </svg>
+                                                <span x-text="isSavingCard.falla ? 'Guardando...' : 'Guardar'"></span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
 
@@ -919,14 +1478,30 @@
 
                                 {{-- SECCIÓN 6: RESUMEN ECONÓMICO Y BALANCE --}}
                                 <div class="rounded-2xl bg-[#1c2530] p-4.5 border border-border/30 flex flex-col gap-3">
-                                    <span class="text-xs font-bold text-text-disabled uppercase tracking-wider flex items-center gap-1.5 border-b border-border/20 pb-2.5">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-emerald-400">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                        </svg>
-                                        Estado Financiero
-                                    </span>
+                                    <div class="flex items-center justify-between border-b border-border/20 pb-2.5">
+                                        <span class="text-xs font-bold text-text-disabled uppercase tracking-wider flex items-center gap-1.5">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-emerald-400">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                            </svg>
+                                            Estado Financiero
+                                        </span>
 
-                                    <div class="grid grid-cols-3 gap-3 text-center">
+                                        <button
+                                            type="button"
+                                            x-show="!editCard.financiero"
+                                            @click="iniciarEdicion('financiero')"
+                                            class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-white bg-emerald-500/15 hover:bg-emerald-500/30 px-2 py-0.5 rounded-lg border border-emerald-500/30 transition-all cursor-pointer"
+                                            title="Editar presupuesto y seña"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                            </svg>
+                                            <span>Editar</span>
+                                        </button>
+                                    </div>
+
+                                    {{-- Vista Normal --}}
+                                    <div x-show="!editCard.financiero" class="grid grid-cols-3 gap-3 text-center">
                                         <div class="rounded-xl bg-[#141c25] p-3 border border-border/20">
                                             <span class="text-[11px] font-semibold text-text-disabled uppercase block">Costo Total</span>
                                             <span class="text-base font-extrabold text-white mt-1 block" x-text="selectedReparacion.costo_estimado"></span>
@@ -944,6 +1519,51 @@
                                                 :class="selectedReparacion.saldo_pendiente_num > 0 ? 'text-amber-400' : 'text-emerald-400'"
                                                 x-text="selectedReparacion.saldo_pendiente"
                                             ></span>
+                                        </div>
+                                    </div>
+
+                                    {{-- Modo Edición Formulario --}}
+                                    <div x-show="editCard.financiero" x-cloak class="flex flex-col gap-3 pt-1">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="text-[11px] font-semibold text-text-disabled block mb-1">Costo Total Estimado ($)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="1"
+                                                    x-model.number="formCard.financiero.costo_estimado"
+                                                    class="w-full rounded-xl bg-[#141c25] px-3 py-2 text-xs font-bold text-white border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all"
+                                                    placeholder="0"
+                                                >
+                                            </div>
+                                            <div>
+                                                <label class="text-[11px] font-semibold text-text-disabled block mb-1">Seña Entregada ($)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="1"
+                                                    x-model.number="formCard.financiero.sena"
+                                                    class="w-full rounded-xl bg-[#141c25] px-3 py-2 text-xs font-bold text-emerald-400 border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all"
+                                                    placeholder="0"
+                                                >
+                                            </div>
+                                        </div>
+
+                                        {{-- Previsualización del Saldo Resultante --}}
+                                        <div class="rounded-xl bg-[#141c25] p-3 border border-border/20 flex items-center justify-between text-xs">
+                                            <span class="text-text-disabled font-semibold">Saldo resultante:</span>
+                                            <span class="font-extrabold text-sm text-amber-400" x-text="saldoPreviewForm()"></span>
+                                        </div>
+
+                                        <div class="flex items-center justify-end gap-2 pt-1.5 border-t border-border/20">
+                                            <button type="button" @click="cancelarEdicion('financiero')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-text-disabled hover:text-white hover:bg-surface transition-colors cursor-pointer">Cancelar</button>
+                                            <button type="button" :disabled="isSavingCard.financiero" @click="guardarFinanciero()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-xs font-bold text-white transition-all shadow-sm cursor-pointer disabled:opacity-50">
+                                                <svg x-show="isSavingCard.financiero" class="animate-spin -ml-0.5 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                                </svg>
+                                                <span x-text="isSavingCard.financiero ? 'Guardando...' : 'Guardar'"></span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -1413,6 +2033,10 @@
             </div>
         </div>
 
+        {{-- =========================================
+            MODAL REUTILIZABLE DE CAMBIO DE ESTADO Y ENTREGA
+        ========================================== --}}
+        <x-modal-cambio-estado />
     </main>
 
     {{-- Estilos para impresión térmica limpia en @media print --}}

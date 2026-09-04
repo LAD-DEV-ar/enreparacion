@@ -4,15 +4,19 @@
     <main class="ml-56 min-h-screen" x-data="{
         openModal: {{ $errors->any() ? 'true' : 'false' }},
         openDetailModal: false,
-        openConfirmModal: false,
-        openConfirmEntregaModal: false,
-        isUpdating: false,
-        isEntrega: false,
         search: '',
         selectedReparacion: null,
         draggedItem: null,
         dragOverColumn: null,
-        pendingMove: null,
+
+        // Modal de confirmación unificado (Cambio de estado / Entrega)
+        confirmModal: {
+            open: false,
+            loading: false,
+            item: null,
+            from: null,
+            to: null,
+        },
 
         // Notificaciones por Email
         enviarEmail: true,
@@ -244,12 +248,8 @@
             this.openDetailModal = true;
         },
 
-        detallesDeEntrega(item){
-            this.selectedReparacion = item;
-            this.enviarEmail = this.clienteTieneEmail(item);
-            this.mostrarPersonalizarMensaje = false;
-            this.mensajePersonalizado = '';
-            this.openConfirmEntregaModal = true;
+        detallesDeEntrega(item) {
+            this.abrirModalConfirmacion(item, 'listo', 'entregado');
         },
 
         onDragStart(e, item, fromColumn) {
@@ -288,99 +288,39 @@
                 return;
             }
 
-            this.pendingMove = {
+            this.abrirModalConfirmacion(item, fromCol, targetColumn);
+        },
+
+        abrirModalConfirmacion(item, from, to) {
+            this.confirmModal = {
+                open: true,
+                loading: false,
                 item: item,
-                from: fromCol,
-                to: targetColumn
+                from: from,
+                to: to,
             };
             this.enviarEmail = this.clienteTieneEmail(item);
             this.mostrarPersonalizarMensaje = false;
             this.mensajePersonalizado = '';
-            this.openConfirmModal = true;
         },
 
-        cancelarCambio() {
-            this.openConfirmModal = false;
-            this.pendingMove = null;
+        cerrarModalConfirmacion() {
+            this.confirmModal.open = false;
+            this.confirmModal.item = null;
+            this.confirmModal.from = null;
+            this.confirmModal.to = null;
             this.draggedItem = null;
             this.dragOverColumn = null;
             this.mostrarPersonalizarMensaje = false;
             this.mensajePersonalizado = '';
         },
 
-        cancelarEntrega(){
-            this.openConfirmEntregaModal = false;
-            this.selectedReparacion = null;
-            this.mostrarPersonalizarMensaje = false;
-            this.mensajePersonalizado = '';
-        },
+        async confirmarCambioEstado() {
+            if (!this.confirmModal.item || this.confirmModal.loading) return;
 
-        async confirmarEntrega(){
-            if (!this.selectedReparacion || this.isEntrega) return;
-
-            this.isEntrega = true;
-            const item = this.selectedReparacion;
-
-            try {
-                const url = `{{ url('/dashboard/reparaciones') }}/${item.id}/estado`;
-                const response = await fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        estado: 'entregado',
-                        enviar_email: this.enviarEmail && this.clienteTieneEmail(item),
-                        mensaje_personalizado: this.mensajePersonalizado ? this.mensajePersonalizado.trim() : null
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    this.recibidas = this.recibidas.filter(r => r.id !== item.id);
-                    this.enProceso = this.enProceso.filter(r => r.id !== item.id);
-                    this.listas = this.listas.filter(r => r.id !== item.id);
-
-                    window.dispatchEvent(new CustomEvent('toast', {
-                        detail: {
-                            message: data.message || 'Reparación marcada como entregada.',
-                            type: 'success'
-                        }
-                    }));
-
-                    this.openConfirmEntregaModal = false;
-                    this.selectedReparacion = null;
-                    this.mostrarPersonalizarMensaje = false;
-                    this.mensajePersonalizado = '';
-                } else {
-                    window.dispatchEvent(new CustomEvent('toast', {
-                        detail: {
-                            message: data.message || 'Error al confirmar la entrega.',
-                            type: 'error'
-                        }
-                    }));
-                }
-            } catch (error) {
-                console.error('Error al confirmar entrega:', error);
-                window.dispatchEvent(new CustomEvent('toast', {
-                    detail: {
-                        message: 'Hubo un error de conexión al confirmar la entrega.',
-                        type: 'error'
-                    }
-                }));
-            } finally {
-                this.isEntrega = false;
-            }
-        },
-
-        async confirmarCambio() {
-            if (!this.pendingMove || this.isUpdating) return;
-
-            this.isUpdating = true;
-            const { item, from, to } = this.pendingMove;
+            this.confirmModal.loading = true;
+            const { item, from, to } = this.confirmModal;
+            const isEntrega = to === 'entregado';
 
             try {
                 const url = `{{ url('/dashboard/reparaciones') }}/${item.id}/estado`;
@@ -401,7 +341,7 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    // Quitar de la columna de origen
+                    // 1. Quitar de la columna de origen
                     if (from === 'recibido') {
                         this.recibidas = this.recibidas.filter(r => r.id !== item.id);
                     } else if (from === 'en_reparacion') {
@@ -410,34 +350,32 @@
                         this.listas = this.listas.filter(r => r.id !== item.id);
                     }
 
-                    // Actualizar item
-                    const updatedItem = {
-                        ...item,
-                        estado: this.columnaLabel(to),
-                        estado_slug: to
-                    };
+                    // 2. Si no es entrega final, agregar a la columna de destino con el estado actualizado
+                    if (!isEntrega) {
+                        const updatedItem = {
+                            ...item,
+                            estado: this.columnaLabel(to),
+                            estado_slug: to
+                        };
 
-                    // Agregar a la columna de destino
-                    if (to === 'recibido') {
-                        this.recibidas.unshift(updatedItem);
-                    } else if (to === 'en_reparacion') {
-                        this.enProceso.unshift(updatedItem);
-                    } else if (to === 'listo') {
-                        this.listas.unshift(updatedItem);
+                        if (to === 'recibido') {
+                            this.recibidas.unshift(updatedItem);
+                        } else if (to === 'en_reparacion') {
+                            this.enProceso.unshift(updatedItem);
+                        } else if (to === 'listo') {
+                            this.listas.unshift(updatedItem);
+                        }
                     }
 
+                    // 3. Notificación Toast
                     window.dispatchEvent(new CustomEvent('toast', {
                         detail: {
-                            message: data.message || `Reparación movida a ${this.columnaLabel(to)}`,
+                            message: data.message || (isEntrega ? 'Reparación marcada como entregada.' : `Reparación movida a ${this.columnaLabel(to)}`),
                             type: 'success'
                         }
                     }));
 
-                    this.openConfirmModal = false;
-                    this.pendingMove = null;
-                    this.draggedItem = null;
-                    this.mostrarPersonalizarMensaje = false;
-                    this.mensajePersonalizado = '';
+                    this.cerrarModalConfirmacion();
                 } else {
                     window.dispatchEvent(new CustomEvent('toast', {
                         detail: {
@@ -455,7 +393,7 @@
                     }
                 }));
             } finally {
-                this.isUpdating = false;
+                this.confirmModal.loading = false;
             }
         }
     }">
@@ -1676,362 +1614,8 @@
         </div>
 
         {{-- =========================================
-            MODAL CONFIRMACIÓN DE CAMBIO DE ESTADO (Drag & Drop)
+            MODAL REUTILIZABLE DE CAMBIO DE ESTADO Y ENTREGA
         ========================================== --}}
-        <div
-            x-show="openConfirmModal"
-            x-cloak
-            @keydown.escape.window="if (!isUpdating) cancelarCambio()"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
-            role="dialog"
-            aria-modal="true"
-        >
-            {{-- Backdrop --}}
-            <div
-                x-show="openConfirmModal"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100"
-                x-transition:leave-end="opacity-0"
-                @click="if (!isUpdating) cancelarCambio()"
-                class="fixed inset-0 bg-black/80 backdrop-blur-sm"
-            ></div>
-
-            {{-- Modal Box --}}
-            <div
-                x-show="openConfirmModal"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 scale-95 translate-y-2"
-                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-                class="relative z-10 w-full max-w-lg rounded-3xl bg-[#141c25] p-6 sm:p-7 shadow-2xl border border-border/40 my-auto"
-            >
-                {{-- Icono & Título --}}
-                <div class="flex items-center gap-4 pb-4 border-b border-border/30">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 text-primary shrink-0 border border-primary/30">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-lg sm:text-xl font-bold text-white tracking-wide">
-                            ¿Confirmar cambio de estado?
-                        </h3>
-                        <p class="text-xs text-text-secondary mt-0.5">
-                            La reparación cambiará su posición en el tablero de trabajo.
-                        </p>
-                    </div>
-                </div>
-
-                {{-- Contenido: Tarjeta a mover & Indicador de columnas --}}
-                <div class="py-5 flex flex-col gap-4">
-                    
-                    {{-- Preview de la reparación --}}
-                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30 flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-primary-light bg-primary/10 px-2.5 py-0.5 rounded-lg border border-primary/20" x-text="pendingMove?.item?.codigo_seguimiento"></span>
-                            <span class="text-xs italic text-text-disabled" x-text="pendingMove?.item?.tiempo_relativo"></span>
-                        </div>
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-sm font-bold text-white truncate" x-text="pendingMove?.item?.cliente_nombre"></span>
-                            <span class="text-xs font-semibold text-primary-light truncate max-w-[180px]" x-text="pendingMove?.item?.dispositivo_marca_modelo"></span>
-                        </div>
-                    </div>
-
-                    {{-- Transición de estados: De -> Hacia --}}
-                    <div class="flex items-center justify-center gap-3 bg-[#1c2530]/60 p-3.5 rounded-2xl border border-border/20">
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="px-3.5 py-1 rounded-xl text-xs font-bold uppercase tracking-wider"
-                                :class="{
-                                    'bg-[#0081cc]/20 text-[#33b4ff] border border-[#0081cc]/40': pendingMove?.from === 'recibido',
-                                    'bg-warning/20 text-warning border border-warning/40': pendingMove?.from === 'en_reparacion',
-                                    'bg-success/20 text-success border border-success/40': pendingMove?.from === 'listo'
-                                }"
-                                x-text="columnaLabel(pendingMove?.from)"
-                            ></span>
-                        </div>
-
-                        {{-- Flecha --}}
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-text-disabled animate-pulse">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                        </svg>
-
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="px-3.5 py-1 rounded-xl text-xs font-bold uppercase tracking-wider"
-                                :class="{
-                                    'bg-[#0081cc]/20 text-[#33b4ff] border border-[#0081cc]/40': pendingMove?.to === 'recibido',
-                                    'bg-warning/20 text-warning border border-warning/40': pendingMove?.to === 'en_reparacion',
-                                    'bg-success/20 text-success border border-success/40': pendingMove?.to === 'listo'
-                                }"
-                                x-text="columnaLabel(pendingMove?.to)"
-                            ></span>
-                        </div>
-                    </div>
-
-                    {{-- Notificación por Email al Cliente --}}
-                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30 flex flex-col gap-3">
-                        <template x-if="clienteTieneEmail(pendingMove?.item)">
-                            <div class="flex flex-col gap-3">
-                                {{-- Switch / Checkbox para activar envío --}}
-                                <div class="flex items-center justify-between gap-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/30 shrink-0">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <label for="modal-email-toggle-move" class="text-sm font-bold text-white cursor-pointer select-none">
-                                                Notificar al cliente por correo
-                                            </label>
-                                            <p class="text-xs text-text-secondary truncate max-w-[240px]" x-text="pendingMove?.item?.cliente_email"></p>
-                                        </div>
-                                    </div>
-
-                                    {{-- Toggle Switch --}}
-                                    <label class="relative inline-flex items-center cursor-pointer shrink-0">
-                                        <input
-                                            id="modal-email-toggle-move"
-                                            type="checkbox"
-                                            x-model="enviarEmail"
-                                            class="sr-only peer"
-                                        >
-                                        <div class="w-11 h-6 bg-[#273343] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary border border-white/10"></div>
-                                    </label>
-                                </div>
-
-                                {{-- Botón de Personalizar / Añadir Nota --}}
-                                <div x-show="enviarEmail">
-                                    <button
-                                        type="button"
-                                        @click="mostrarPersonalizarMensaje = !mostrarPersonalizarMensaje"
-                                        class="text-xs font-semibold text-primary-light hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer pt-1"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 transition-transform" :class="mostrarPersonalizarMensaje ? 'rotate-90' : ''">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                                        </svg>
-                                        <span x-text="mostrarPersonalizarMensaje ? 'Ocultar nota adicional' : '+ Añadir nota técnica al correo (opcional)'"></span>
-                                    </button>
-
-                                    <div x-show="mostrarPersonalizarMensaje" class="mt-2.5">
-                                        <textarea
-                                            x-model="mensajePersonalizado"
-                                            rows="2"
-                                            placeholder="Ej: Ya cambiamos la pantalla y está en etapa de pruebas finales..."
-                                            class="w-full rounded-xl bg-[#141c25] border border-border/40 p-2.5 text-xs text-white placeholder:text-text-disabled outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all resize-none"
-                                        ></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-
-                        {{-- Caso: Cliente sin email registrado --}}
-                        <template x-if="!clienteTieneEmail(pendingMove?.item)">
-                            <div class="flex items-center gap-3 text-text-disabled bg-[#141c25]/80 p-2.5 rounded-xl border border-border/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-warning shrink-0">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                                </svg>
-                                <span class="text-xs font-medium">El cliente no tiene email registrado. Solo se cambiará el estado.</span>
-                            </div>
-                        </template>
-                    </div>
-
-                </div>
-
-                {{-- Botones de Acción --}}
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-border/30">
-                    <button
-                        type="button"
-                        :disabled="isUpdating"
-                        @click="cancelarCambio()"
-                        class="px-5 py-2.5 rounded-xl bg-surface-hover hover:bg-[#364252] text-sm font-bold text-white transition-all cursor-pointer disabled:opacity-50"
-                    >
-                        Cancelar
-                    </button>
-
-                    <button
-                        type="button"
-                        :disabled="isUpdating"
-                        @click="confirmarCambio()"
-                        class="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover active:scale-[0.98] text-sm font-bold text-white transition-all shadow-md cursor-pointer flex items-center gap-2 disabled:opacity-50"
-                    >
-                        <svg x-show="isUpdating" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                        </svg>
-                        <span x-text="isUpdating ? 'Actualizando...' : 'Confirmar Cambio'"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        {{-- =========================================
-            MODAL CONFIRMACIÓN DE CAMBIO DE ESTADO (Drag & Drop)
-        ========================================== --}}
-        <div
-            x-show="openConfirmEntregaModal"
-            x-cloak
-            @keydown.escape.window="if (!isEntrega) cancelarEntrega()"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
-            role="dialog"
-            aria-modal="true"
-        >
-            {{-- Backdrop --}}
-            <div
-                x-show="openConfirmEntregaModal"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100"
-                x-transition:leave-end="opacity-0"
-                @click="if (!isEntrega) cancelarEntrega()"
-                class="fixed inset-0 bg-black/80 backdrop-blur-sm"
-            ></div>
-
-            {{-- Modal Box --}}
-            <div
-                x-show="openConfirmEntregaModal"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 scale-95 translate-y-2"
-                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-                class="relative z-10 w-full max-w-lg rounded-3xl bg-[#141c25] p-6 sm:p-7 shadow-2xl border border-border/40 my-auto"
-            >
-                {{-- Icono & Título --}}
-                <div class="flex items-center gap-4 pb-4 border-b border-border/30">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-success/20 text-success shrink-0 border border-success/30">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75 9 17.25 19.5 6.75" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-lg sm:text-xl font-bold text-white tracking-wide">
-                            ¿Confirmar entrega del equipo?
-                        </h3>
-                        <p class="text-xs text-text-secondary mt-0.5">
-                            La reparación cambiará su estado a entregado.
-                        </p>
-                    </div>
-                </div>
-
-                {{-- Contenido: Tarjeta a mover & Indicador de columnas --}}
-                <div class="py-5 flex flex-col gap-4">
-                    
-                    {{-- Preview de la reparación --}}
-                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30 flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-success bg-success/20 px-2.5 py-0.5 rounded-lg border border-success/20" x-text="selectedReparacion?.codigo_seguimiento"></span>
-                            <span class="text-xs italic text-text-disabled" x-text="selectedReparacion?.tiempo_relativo"></span>
-                        </div>
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-sm font-bold text-white truncate" x-text="selectedReparacion?.cliente_nombre"></span>
-                            <span class="text-xs font-semibold text-primary-light truncate max-w-[180px]" x-text="selectedReparacion?.dispositivo_marca_modelo"></span>
-                        </div>
-                    </div>
-
-                    {{-- Notificación por Email al Cliente en Entrega --}}
-                    <div class="rounded-2xl bg-[#1c2530] p-4 border border-border/30 flex flex-col gap-3">
-                        <template x-if="clienteTieneEmail(selectedReparacion)">
-                            <div class="flex flex-col gap-3">
-                                {{-- Switch / Checkbox para activar envío --}}
-                                <div class="flex items-center justify-between gap-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-success/15 text-success border border-success/30 shrink-0">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <label for="modal-email-toggle-entrega" class="text-sm font-bold text-white cursor-pointer select-none">
-                                                Enviar comprobante de entrega por correo
-                                            </label>
-                                            <p class="text-xs text-text-secondary truncate max-w-[240px]" x-text="selectedReparacion?.cliente_email"></p>
-                                        </div>
-                                    </div>
-
-                                    {{-- Toggle Switch --}}
-                                    <label class="relative inline-flex items-center cursor-pointer shrink-0">
-                                        <input
-                                            id="modal-email-toggle-entrega"
-                                            type="checkbox"
-                                            x-model="enviarEmail"
-                                            class="sr-only peer"
-                                        >
-                                        <div class="w-11 h-6 bg-[#273343] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-success border border-white/10"></div>
-                                    </label>
-                                </div>
-
-                                {{-- Botón de Personalizar / Añadir Nota --}}
-                                <div x-show="enviarEmail">
-                                    <button
-                                        type="button"
-                                        @click="mostrarPersonalizarMensaje = !mostrarPersonalizarMensaje"
-                                        class="text-xs font-semibold text-success hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer pt-1"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 transition-transform" :class="mostrarPersonalizarMensaje ? 'rotate-90' : ''">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                                        </svg>
-                                        <span x-text="mostrarPersonalizarMensaje ? 'Ocultar nota adicional' : '+ Añadir nota técnica al correo (opcional)'"></span>
-                                    </button>
-
-                                    <div x-show="mostrarPersonalizarMensaje" class="mt-2.5">
-                                        <textarea
-                                            x-model="mensajePersonalizado"
-                                            rows="2"
-                                            placeholder="Ej: Se entregó con cargador y cable original verificado..."
-                                            class="w-full rounded-xl bg-[#141c25] border border-border/40 p-2.5 text-xs text-white placeholder:text-text-disabled outline-none focus:ring-1 focus:ring-success focus:border-success transition-all resize-none"
-                                        ></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-
-                        {{-- Caso: Cliente sin email registrado --}}
-                        <template x-if="!clienteTieneEmail(selectedReparacion)">
-                            <div class="flex items-center gap-3 text-text-disabled bg-[#141c25]/80 p-2.5 rounded-xl border border-border/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-warning shrink-0">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                                </svg>
-                                <span class="text-xs font-medium">El cliente no tiene email registrado. Solo se cambiará el estado.</span>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                {{-- Botones de Acción --}}
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-border/30">
-                    <button
-                        type="button"
-                        :disabled="isEntrega"
-                        @click="cancelarEntrega()"
-                        class="px-5 py-2.5 rounded-xl bg-surface-hover hover:bg-[#364252] text-sm font-bold text-white transition-all cursor-pointer disabled:opacity-50"
-                    >
-                        Cancelar
-                    </button>
-
-                    <button
-                        type="button"
-                        :disabled="isEntrega"
-                        @click="confirmarEntrega()"
-                        class="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover active:scale-[0.98] text-sm font-bold text-white transition-all shadow-md cursor-pointer flex items-center gap-2 disabled:opacity-50"
-                    >
-                        <svg x-show="isEntrega" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                        </svg>
-                        <span x-text="isEntrega ? 'Actualizando...' : 'Confirmar Cambio'"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
+        <x-modal-cambio-estado />
     </main>
 @endsection

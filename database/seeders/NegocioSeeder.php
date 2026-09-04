@@ -30,24 +30,31 @@ class NegocioSeeder extends Seeder
 
     public function run(): void
     {
-        // ─── Usuario administrador fijo para facilitar el login inicial ────────────
-        $negocioPrincipal = Negocio::factory()->create([
-            'nombre' => 'Mi Taller de Prueba',
-            'direccion' => 'Av. Siempre Viva 742',
-            'telefono' => '0351-4123456',
-        ]);
 
-        $adminFijo = User::factory()->administrador()->conNegocio($negocioPrincipal)->create([
-            'name' => 'Admin Principal',
-            'email' => 'admin@test.com',
-            'password' => bcrypt('password'),
-        ]);
+        $adminFijo = User::firstWhere('email', 'admin@test.com');
 
-        $this->command->info("✔  Negocio principal: {$negocioPrincipal->nombre} (ID {$negocioPrincipal->id})");
-        $this->command->info("✔  Admin fijo: {$adminFijo->email} / contraseña: password");
+        if (!$adminFijo) {
+        
+            $negocioPrincipal = Negocio::factory()->create([
+                'nombre' => 'Mi Taller de Prueba',
+                'direccion' => 'Av. Siempre Viva 742',
+                'telefono' => '0351-4123456',
+            ]);
+        
+            $adminFijo = User::factory()
+                ->administrador()
+                ->conNegocio($negocioPrincipal)
+                ->create([
+                    'name' => 'Admin Principal',
+                    'email' => 'admin@test.com',
+                    'password' => bcrypt('password'),
+                ]);
+            $this->command->info("✔  Negocio principal: {$negocioPrincipal->nombre} (ID {$negocioPrincipal->id})");
+            $this->command->info("✔  Admin fijo: {$adminFijo->email} / contraseña: password");
 
-        // Sembrar el negocio principal con datos de prueba
-        $this->sembrarNegocio($negocioPrincipal, $adminFijo);
+            // Sembrar el negocio principal con datos de prueba
+            $this->sembrarNegocio($negocioPrincipal, $adminFijo);
+        }
 
         // ─── Negocios adicionales totalmente aleatorios ────────────────────────────
         for ($i = 0; $i < self::NEGOCIOS - 1; $i++) {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Traits\FormateaFechaArgentina;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ClientesController extends Controller
 {
@@ -154,4 +155,45 @@ class ClientesController extends Controller
 
         return redirect()->route('clientes.index')->with('success', 'Cliente registrado correctamente.');
     }
+
+    public function update(Request $request, Cliente $cliente)
+    {
+        $user = auth()->user();
+
+        if ($cliente->negocios_id !== $user->negocios_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para modificar este cliente.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+            'telefono' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+        ], [
+            'nombre.required' => 'El nombre del cliente es obligatorio.',
+            'telefono.required' => 'El teléfono es obligatorio.',
+            'email.email' => 'El correo electrónico no es válido.',
+        ]);
+
+        $cliente->nombre = $validated['nombre'];
+        $cliente->telefono = $validated['telefono'];
+        $cliente->email = $validated['email'] ?? null;
+        $cliente->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Datos del cliente actualizados correctamente.',
+            'cliente' => [
+                'id' => $cliente->id,
+                'nombre' => $cliente->nombre,
+                'telefono' => $cliente->telefono,
+                'email' => $cliente->email ?? 'Sin correo',
+                'iniciales' => $cliente->iniciales,
+                'whatsapp_url' => $cliente->whatsapp_url,
+            ],
+        ]);
+    }
 }
+

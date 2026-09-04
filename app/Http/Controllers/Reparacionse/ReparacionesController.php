@@ -88,6 +88,7 @@ class ReparacionesController extends Controller
 
             return [
                 'id' => $rep->id,
+                'dispositivo_id' => $rep->dispositivos_id,
                 'codigo_seguimiento' => $codigo,
                 'codigo_limpio' => $codigoLimpio,
                 'cliente_id' => $cliente?->id,
@@ -314,4 +315,72 @@ class ReparacionesController extends Controller
             'notas_internas' => $reparacion->notas_internas,
         ]);
     }
+
+    public function update(Request $request, Reparacion $reparacion)
+    {
+        $user = auth()->user();
+
+        if ($reparacion->negocios_id !== $user->negocios_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para modificar esta reparación.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'falla_reportada' => ['sometimes', 'required', 'string', 'max:2000'],
+            'clave_de_acceso' => ['nullable', 'string', 'max:255'],
+            'costo_estimado' => ['nullable', 'numeric', 'min:0'],
+            'sena' => ['nullable', 'numeric', 'min:0'],
+        ], [
+            'falla_reportada.required' => 'La falla reportada no puede estar vacía.',
+            'falla_reportada.max' => 'La falla reportada no puede superar los 2000 caracteres.',
+            'clave_de_acceso.max' => 'La clave de acceso no puede superar los 255 caracteres.',
+            'costo_estimado.numeric' => 'El costo estimado debe ser un valor numérico.',
+            'costo_estimado.min' => 'El costo estimado no puede ser negativo.',
+            'sena.numeric' => 'La seña debe ser un valor numérico.',
+            'sena.min' => 'La seña no puede ser negativa.',
+        ]);
+
+        if ($request->has('falla_reportada')) {
+            $reparacion->falla_reportada = $validated['falla_reportada'];
+        }
+        if ($request->has('clave_de_acceso')) {
+            $reparacion->clave_de_acceso = $validated['clave_de_acceso'] ?? null;
+        }
+        if ($request->has('costo_estimado')) {
+            $reparacion->costo_estimado = ($validated['costo_estimado'] !== null && $validated['costo_estimado'] !== '')
+                ? (int) round($validated['costo_estimado'])
+                : null;
+        }
+        if ($request->has('sena')) {
+            $reparacion->sena = ($validated['sena'] !== null && $validated['sena'] !== '')
+                ? (int) round($validated['sena'])
+                : null;
+        }
+
+        $reparacion->save();
+
+        $costoNum = (float) ($reparacion->costo_estimado ?? 0);
+        $senaNum = (float) ($reparacion->sena ?? 0);
+        $saldoNum = (float) ($reparacion->saldo_pendiente ?? max(0, $costoNum - $senaNum));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reparación actualizada correctamente.',
+            'reparacion' => [
+                'id' => $reparacion->id,
+                'falla_reportada' => $reparacion->falla_reportada,
+                'clave_de_acceso' => $reparacion->clave_de_acceso ?: 'Sin clave',
+                'costo_estimado' => $costoNum > 0 ? ('$'.number_format($costoNum, 0, ',', '.')) : 'Sin costo',
+                'costo_estimado_num' => $costoNum,
+                'sena' => $senaNum > 0 ? ('$'.number_format($senaNum, 0, ',', '.')) : '$0',
+                'sena_num' => $senaNum,
+                'saldo_pendiente' => '$'.number_format($saldoNum, 0, ',', '.'),
+                'saldo_pendiente_num' => $saldoNum,
+                'esta_saldado' => $saldoNum <= 0 && $costoNum > 0,
+            ],
+        ]);
+    }
 }
+
