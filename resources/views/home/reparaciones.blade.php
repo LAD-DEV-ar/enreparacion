@@ -8,6 +8,29 @@
             filtroEstado: 'todas',
             reparaciones: {{ Js::from($reparaciones) }},
 
+            params: new URLSearchParams(window.location.search),
+            get selectedReparacionId() {
+                const id = this.params.get('selectedReparacion');
+                return id !== null ? Number(id) : null;
+            },
+
+            init() {
+                if (this.selectedReparacionId) {
+                    let rep = this.reparaciones.find( reparacion => {
+                        return reparacion.id === this.selectedReparacionId;
+                    });
+
+                    setTimeout( () => {
+                        this.abrirSlideOver(rep);
+                    }, 100);
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('selectedReparacion');
+                    window.history.replaceState({}, '', url);
+                }
+                return;
+            },
+            
+            
             // Estados de interfaz y modales
             openSlideOver: false,
             openNewModal: {{ $errors->any() ? 'true' : 'false' }},
@@ -21,6 +44,7 @@
             copiadoCodigo: false,
             copiadoImei: false,
             rateLimiting: false,
+
 
             // Filtrado reactivo instantáneo (Buscador híbrido + Píldoras de estado)
             filtradas() {

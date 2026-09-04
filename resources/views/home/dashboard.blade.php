@@ -1661,6 +1661,9 @@
 
                 {{-- Pie del modal: Acciones --}}
                 <div class="flex items-center justify-end gap-4 pt-5 mt-2 border-t border-border/20">
+                    <a :href="`/reparaciones?selectedReparacion=${selectedReparacion?.id}`" class="flex items-center justify-center h-11 rounded-xl bg-warning/80 hover:bg-warning px-6 text-sm font-bold text-white transition-all cursor-pointer">
+                        Editar
+                    </a>
                     <button
                         type="button"
                         @click="openDetailModal = false"
