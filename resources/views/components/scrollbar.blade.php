@@ -1,5 +1,4 @@
 @props([
-    'class'     => '',
     'maxHeight' => null,
     'axis'      => 'y',
     'size'      => 'sm',
@@ -36,7 +35,7 @@
 
 <div
     {{ $attributes->merge([
-        'class' => "custom-scrollbar {$axisClasses} {$sizeClass} {$variantClass} {$roundedClass} {$hoverClass} {$class}",
+        'class' => "custom-scrollbar {$axisClasses} {$sizeClass} {$variantClass} {$roundedClass} {$hoverClass}",
         'style'  => $inlineStyle,
     ]) }}
 >

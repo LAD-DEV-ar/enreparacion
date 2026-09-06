@@ -1635,7 +1635,7 @@
             x-show="openPrintModal"
             x-cloak
             @keydown.escape.window="openPrintModal = false"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4"
             role="dialog"
             aria-modal="true"
         >
@@ -1661,9 +1661,9 @@
                 x-transition:leave="transition ease-in duration-200"
                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-                class="relative z-10 w-full max-w-md rounded-3xl bg-[#141c25] p-6 shadow-2xl border border-border/40 my-auto"
+                class="relative z-10 flex w-full max-w-md max-h-[calc(100dvh-2rem)] flex-col rounded-3xl bg-[#141c25] p-6 shadow-2xl border border-border/40"
             >
-                <div class="flex items-center justify-between border-b border-border/30 pb-4 mb-4">
+                <div class="flex shrink-0 items-center justify-between border-b border-border/30 pb-4 mb-4">
                     <div class="flex items-center gap-2.5">
                         <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/20 text-primary">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
@@ -1685,72 +1685,78 @@
                 </div>
 
                 {{-- Preview visual del Ticket Térmico --}}
-                <div id="ticket-imprimible" class="rounded-2xl bg-white text-black p-5 font-mono text-xs shadow-inner select-none">
-                    <div class="text-center border-b border-dashed border-gray-400 pb-3 mb-3">
-                        <h4 class="font-extrabold text-sm uppercase tracking-wider text-black" x-text="selectedReparacion?.negocio_nombre || 'EnReparación'"></h4>
-                        <p class="text-[10px] text-gray-700" x-text="selectedReparacion?.negocio_direccion"></p>
-                        <p class="text-[10px] text-gray-700" x-text="'Tel: ' + (selectedReparacion?.negocio_telefono || 'Sin teléfono')"></p>
-                        <div class="mt-2 text-center">
-                            <span class="text-xs font-bold uppercase tracking-widest bg-black text-white px-2 py-0.5 rounded">ORDEN DE SERVICIO</span>
-                            <div class="text-base font-extrabold mt-1 tracking-wider text-black" x-text="selectedReparacion?.codigo_seguimiento"></div>
-                        </div>
-                    </div>
+                <x-scrollbar
+                    :hover="false"
+                >
+                    <div class="min-h-0 flex-1 overflow-y-auto pr-3">    
+                        <div id="ticket-imprimible" class="rounded-2xl bg-white text-black p-5 font-mono text-xs shadow-inner select-none">
+                            <div class="text-center border-b border-dashed border-gray-400 pb-3 mb-3">
+                                <h4 class="font-extrabold text-sm uppercase tracking-wider text-black" x-text="selectedReparacion?.negocio_nombre || 'EnReparación'"></h4>
+                                <p class="text-[10px] text-gray-700" x-text="selectedReparacion?.negocio_direccion"></p>
+                                <p class="text-[10px] text-gray-700" x-text="'Tel: ' + (selectedReparacion?.negocio_telefono || 'Sin teléfono')"></p>
+                                <div class="mt-2 text-center">
+                                    <span class="text-xs font-bold uppercase tracking-widest bg-black text-white px-2 py-0.5 rounded">ORDEN DE SERVICIO</span>
+                                    <div class="text-base font-extrabold mt-1 tracking-wider text-black" x-text="selectedReparacion?.codigo_seguimiento"></div>
+                                </div>
+                            </div>
 
-                    <div class="space-y-1.5 border-b border-dashed border-gray-400 pb-3 mb-3 text-[11px]">
-                        <div class="flex justify-between">
-                            <span class="font-bold text-gray-600">Fecha:</span>
-                            <span class="font-semibold text-black" x-text="selectedReparacion?.fecha_hora"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="font-bold text-gray-600">Cliente:</span>
-                            <span class="font-semibold text-black truncate max-w-[170px]" x-text="selectedReparacion?.cliente_nombre"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="font-bold text-gray-600">Teléfono:</span>
-                            <span class="font-semibold text-black" x-text="selectedReparacion?.cliente_telefono"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="font-bold text-gray-600">Equipo:</span>
-                            <span class="font-semibold text-black" x-text="selectedReparacion?.dispositivo_marca_modelo"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="font-bold text-gray-600">IMEI/Serie:</span>
-                            <span class="font-semibold text-black truncate max-w-[170px]" x-text="selectedReparacion?.imei_o_serie"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="font-bold text-gray-600">Clave/PIN:</span>
-                            <span class="font-semibold text-black" x-text="selectedReparacion?.clave_de_acceso"></span>
-                        </div>
-                    </div>
+                            <div class="space-y-1.5 border-b border-dashed border-gray-400 pb-3 mb-3 text-[11px]">
+                                <div class="flex justify-between">
+                                    <span class="font-bold text-gray-600">Fecha:</span>
+                                    <span class="font-semibold text-black" x-text="selectedReparacion?.fecha_hora"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="font-bold text-gray-600">Cliente:</span>
+                                    <span class="font-semibold text-black truncate max-w-[170px]" x-text="selectedReparacion?.cliente_nombre"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="font-bold text-gray-600">Teléfono:</span>
+                                    <span class="font-semibold text-black" x-text="selectedReparacion?.cliente_telefono"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="font-bold text-gray-600">Equipo:</span>
+                                    <span class="font-semibold text-black" x-text="selectedReparacion?.dispositivo_marca_modelo"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="font-bold text-gray-600">IMEI/Serie:</span>
+                                    <span class="font-semibold text-black truncate max-w-[170px]" x-text="selectedReparacion?.imei_o_serie"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="font-bold text-gray-600">Clave/PIN:</span>
+                                    <span class="font-semibold text-black" x-text="selectedReparacion?.clave_de_acceso"></span>
+                                </div>
+                            </div>
 
-                    <div class="border-b border-dashed border-gray-400 pb-3 mb-3 text-[11px]">
-                        <span class="font-bold text-gray-600 block mb-0.5">Falla Reportada:</span>
-                        <p class="text-black italic leading-tight" x-text="selectedReparacion?.falla_reportada"></p>
-                    </div>
+                            <div class="border-b border-dashed border-gray-400 pb-3 mb-3 text-[11px]">
+                                <span class="font-bold text-gray-600 block mb-0.5">Falla Reportada:</span>
+                                <p class="text-black italic leading-tight" x-text="selectedReparacion?.falla_reportada"></p>
+                            </div>
 
-                    <div class="space-y-1 border-b border-dashed border-gray-400 pb-3 mb-3 text-xs">
-                        <div class="flex justify-between">
-                            <span class="font-semibold text-gray-700">Presupuesto Estimado:</span>
-                            <span class="font-bold text-black" x-text="selectedReparacion?.costo_estimado"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="font-semibold text-gray-700">Seña Entregada:</span>
-                            <span class="font-bold text-black" x-text="selectedReparacion?.sena"></span>
-                        </div>
-                        <div class="flex justify-between text-sm font-extrabold border-t border-gray-300 pt-1 mt-1">
-                            <span>Saldo a Cancelar:</span>
-                            <span x-text="selectedReparacion?.saldo_pendiente"></span>
-                        </div>
-                    </div>
+                            <div class="space-y-1 border-b border-dashed border-gray-400 pb-3 mb-3 text-xs">
+                                <div class="flex justify-between">
+                                    <span class="font-semibold text-gray-700">Presupuesto Estimado:</span>
+                                    <span class="font-bold text-black" x-text="selectedReparacion?.costo_estimado"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="font-semibold text-gray-700">Seña Entregada:</span>
+                                    <span class="font-bold text-black" x-text="selectedReparacion?.sena"></span>
+                                </div>
+                                <div class="flex justify-between text-sm font-extrabold border-t border-gray-300 pt-1 mt-1">
+                                    <span>Saldo a Cancelar:</span>
+                                    <span x-text="selectedReparacion?.saldo_pendiente"></span>
+                                </div>
+                            </div>
 
-                    <div class="text-[9px] text-gray-600 text-center leading-tight space-y-1">
-                        <p>Conserve este talón para retirar su equipo.</p>
-                        <p>Pasados los 60 días corridos sin retiro, el equipo pasa a desarme o reciclaje.</p>
-                    </div>
-                </div>
+                            <div class="text-[9px] text-gray-600 text-center leading-tight space-y-1">
+                                <p>Conserve este talón para retirar su equipo.</p>
+                                <p>Pasados los 60 días corridos sin retiro, el equipo pasa a desarme o reciclaje.</p>
+                            </div>
+                        </div>
+                    </div> 
+                </x-scrollbar>    
 
                 {{-- Botones de Acción del Modal --}}
-                <div class="flex items-center justify-end gap-3 mt-5">
+                <div class="flex shrink-0 items-center justify-end gap-3 mt-5 pt-1">
                     <button
                         type="button"
                         @click="openPrintModal = false"
