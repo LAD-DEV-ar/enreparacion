@@ -2,7 +2,7 @@
 
 @section('main')
     <main class="ml-56 min-h-screen" x-data="{
-        openModal: {{ $errors->any() ? 'true' : 'false' }},
+        openNewModal: {{ $errors->any() ? 'true' : 'false' }},
         openDetailModal: false,
         search: '',
         selectedReparacion: null,
@@ -395,6 +395,20 @@
             } finally {
                 this.confirmModal.loading = false;
             }
+        },
+
+        // Modal Nueva Reparación
+        abrirModalNuevaReparacion() {
+            this.tipoClaveSeleccionada = 'Sin clave';
+            this.tipoClaveConfirmada = 'Sin clave';
+            this.claveAccesoValor = 'Sin clave';
+            this.tempPinValor = '';
+            this.tempPatronSecuencia = [];
+            this.openNewModal = true;
+        },
+
+        cerrarModalNuevaReparacion() {
+            this.openNewModal = false;
         }
     }">
         @include('components.sidebar')
@@ -439,13 +453,7 @@
 
 
                 {{-- Nueva reparación --}}
-                <button
-                    type="button"
-                    @click="openModal = true"
-                    class="h-16 rounded-2xl bg-primary px-10 text-xl font-bold text-white transition-colors hover:bg-primary-hover cursor-pointer"
-                >
-                    + Nueva Reparación
-                </button>
+                <x-btn-nueva-reparacion />
 
             </div>
 
@@ -747,42 +755,22 @@
         </div>
 
         {{-- =========================================
-            MODAL NUEVA REPARACIÓN (Diseño Compacto)
+            MODAL NUEVA REPARACIÓN (Componente Reutilizable)
         ========================================== --}}
-        <div
-            x-show="openModal"
-            x-cloak
-            @keydown.escape.window="openModal = false"
-            class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-            role="dialog"
-            aria-modal="true"
-        >
-            {{-- Backdrop --}}
-            <div
-                x-show="openModal"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100"
-                x-transition:leave-end="opacity-0"
-                @click="openModal = false"
-                class="fixed inset-0 bg-black/75 backdrop-blur-sm"
-            ></div>
+        <x-modal-nueva-reparacion :action="route('dashboard.store')" />
 
-            {{-- Modal Box --}}
-            <div
-                x-show="openModal"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 scale-95 translate-y-2"
-                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-                class="relative z-10 w-full max-w-4xl max-h-[90vh] rounded-3xl bg-[#141c25] p-4 sm:p-6 shadow-2xl border border-border/30 overflow-y-auto my-auto"
-            >
-                <form action="{{ route('dashboard.store') }}" method="POST">
-                    @csrf
+
+
+                <x-scrollbar
+                    class="p-4 sm:p-6"
+                    max-height="90vh"
+                    variant="dark"
+                    size="sm"
+                    :rounded="true"
+                    :hover="true"
+                >
+                    <form action="{{ route('dashboard.store') }}" method="POST">
+                        @csrf
 
                     {{-- Grid 2 Columnas --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
@@ -1046,8 +1034,9 @@
                         </button>
                     </div>
                 </form>
-            </div>
+            </x-scrollbar>
         </div>
+    </div>
 
         {{-- =========================================
             SUB-MODAL CLAVE DE ACCESO (PIN & Patrón 3x3)

@@ -72,6 +72,26 @@
                 falla: false,
                 financiero: false,
             },
+
+            // Control de Clave de Acceso y Sub-modales de Patrón
+            openClaveSubModal: false,
+            tipoClaveSeleccionada: 'Sin clave',
+            tipoClaveConfirmada: 'Sin clave',
+            claveAccesoValor: '',
+
+            // PIN / Contraseña
+            tempPinValor: '',
+            mostrarPinTexto: true,
+
+            // Patrón 3x3 Interactivo
+            tempPatronSecuencia: [],
+            isDrawingPattern: false,
+            patternCoords: { x: 0, y: 0 },
+
+            // Visor de Patrón en Detalle
+            openPatternViewerModal: false,
+            visorPatronSecuencia: [],
+            visorPatronTitulo: '',
             isSavingCard: {
                 cliente: false,
                 dispositivo: false,
@@ -135,6 +155,23 @@
 
             cerrarSlideOver() {
                 this.openSlideOver = false;
+            },
+
+            // Métodos del Modal Nueva Reparación
+            abrirModalNuevaReparacion() {
+                this.tipoClaveSeleccionada = 'Sin clave';
+                this.tipoClaveConfirmada = 'Sin clave';
+                this.claveAccesoValor = 'Sin clave';
+                this.tempPinValor = '';
+                this.tempPatronSecuencia = [];
+                if (this.formCard && this.formCard.dispositivo) {
+                    this.formCard.dispositivo.clave_de_acceso = 'Sin clave';
+                }
+                this.openNewModal = true;
+            },
+
+            cerrarModalNuevaReparacion() {
+                this.openNewModal = false;
             },
 
             // Métodos de Impresión
@@ -356,11 +393,23 @@
                         email: (this.selectedReparacion.cliente_email && this.selectedReparacion.cliente_email !== 'Sin correo') ? this.selectedReparacion.cliente_email : ''
                     };
                 } else if (card === 'dispositivo') {
+                    const clave = (this.selectedReparacion.clave_de_acceso && this.selectedReparacion.clave_de_acceso !== 'Sin clave') ? this.selectedReparacion.clave_de_acceso : '';
                     this.formCard.dispositivo = {
                         marca_y_modelo: this.selectedReparacion.dispositivo_marca_modelo || '',
                         imei_o_serie: (this.selectedReparacion.imei_o_serie && this.selectedReparacion.imei_o_serie !== 'No especificado') ? this.selectedReparacion.imei_o_serie : '',
-                        clave_de_acceso: (this.selectedReparacion.clave_de_acceso && this.selectedReparacion.clave_de_acceso !== 'Sin clave') ? this.selectedReparacion.clave_de_acceso : ''
+                        clave_de_acceso: clave
                     };
+
+                    const esPat = this.esPatron(clave);
+                    const esPin = clave.startsWith('PIN:') || (clave !== 'Sin clave' && clave !== 'Huella / Face ID' && !esPat && clave.trim().length > 0);
+                    const esHuella = clave === 'Huella / Face ID';
+                    const tipo = esPat ? 'Patrón de desbloqueo' : (esPin ? 'PIN / Contraseña' : (esHuella ? 'Huella / Face ID' : 'Sin clave'));
+
+                    this.tipoClaveSeleccionada = tipo;
+                    this.tipoClaveConfirmada = tipo;
+                    this.claveAccesoValor = clave;
+                    this.tempPatronSecuencia = esPat ? this.extraerSecuenciaPatron(clave) : [];
+                    this.tempPinValor = esPin ? this.extraerPin(clave) : '';
                 } else if (card === 'falla') {
                     this.formCard.falla = {
                         falla_reportada: (this.selectedReparacion.falla_reportada && this.selectedReparacion.falla_reportada !== 'No especificada') ? this.selectedReparacion.falla_reportada : ''
@@ -376,6 +425,190 @@
 
             cancelarEdicion(card) {
                 this.editCard[card] = false;
+            },
+
+            // Métodos para Gestión de Claves y Patrón 3x3
+            onTipoClaveChange(val) {
+                if (val === 'PIN / Contraseña') {
+                    this.tempPinValor = this.extraerPin(this.formCard.dispositivo.clave_de_acceso || this.claveAccesoValor);
+                    this.openClaveSubModal = true;
+                } else if (val === 'Patrón de desbloqueo') {
+                    this.tempPatronSecuencia = this.extraerSecuenciaPatron(this.formCard.dispositivo.clave_de_acceso || this.claveAccesoValor);
+                    this.openClaveSubModal = true;
+                } else if (val === 'Huella / Face ID') {
+                    this.claveAccesoValor = 'Huella / Face ID';
+                    this.formCard.dispositivo.clave_de_acceso = 'Huella / Face ID';
+                    this.tipoClaveConfirmada = 'Huella / Face ID';
+                    this.openClaveSubModal = false;
+                } else {
+                    this.claveAccesoValor = 'Sin clave';
+                    this.formCard.dispositivo.clave_de_acceso = 'Sin clave';
+                    this.tipoClaveConfirmada = 'Sin clave';
+                    this.tempPinValor = '';
+                    this.tempPatronSecuencia = [];
+                    this.openClaveSubModal = false;
+                }
+            },
+
+            cancelarSubModalClave() {
+                this.openClaveSubModal = false;
+                this.isDrawingPattern = false;
+                if (!this.tipoClaveConfirmada || this.tipoClaveConfirmada === 'Sin clave') {
+                    this.tipoClaveSeleccionada = 'Sin clave';
+                    this.claveAccesoValor = 'Sin clave';
+                    this.formCard.dispositivo.clave_de_acceso = 'Sin clave';
+                } else {
+                    this.tipoClaveSeleccionada = this.tipoClaveConfirmada;
+                }
+            },
+
+            guardarSubModalClave() {
+                if (this.tipoClaveSeleccionada === 'PIN / Contraseña') {
+                    const pin = (this.tempPinValor || '').trim();
+                    if (!pin) {
+                        this.tipoClaveSeleccionada = 'Sin clave';
+                        this.tipoClaveConfirmada = 'Sin clave';
+                        this.claveAccesoValor = 'Sin clave';
+                        this.formCard.dispositivo.clave_de_acceso = 'Sin clave';
+                        this.openClaveSubModal = false;
+                        return;
+                    }
+                    this.claveAccesoValor = pin.startsWith('PIN:') || pin.startsWith('Contraseña:') ? pin : `PIN: ${pin}`;
+                    this.formCard.dispositivo.clave_de_acceso = this.claveAccesoValor;
+                    this.tipoClaveConfirmada = 'PIN / Contraseña';
+                    this.openClaveSubModal = false;
+                } else if (this.tipoClaveSeleccionada === 'Patrón de desbloqueo') {
+                    if (this.tempPatronSecuencia.length < 2) {
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: {
+                                message: 'Debes conectar al menos 2 puntos para formar un patrón.',
+                                type: 'error'
+                            }
+                        }));
+                        return;
+                    }
+                    this.claveAccesoValor = `Patrón: ${this.tempPatronSecuencia.join('-')}`;
+                    this.formCard.dispositivo.clave_de_acceso = this.claveAccesoValor;
+                    this.tipoClaveConfirmada = 'Patrón de desbloqueo';
+                    this.openClaveSubModal = false;
+                }
+            },
+
+            verOEditarClave() {
+                if (this.tipoClaveConfirmada === 'PIN / Contraseña' || this.tipoClaveSeleccionada === 'PIN / Contraseña') {
+                    this.tempPinValor = this.extraerPin(this.formCard.dispositivo.clave_de_acceso || this.claveAccesoValor);
+                    this.tipoClaveSeleccionada = 'PIN / Contraseña';
+                    this.openClaveSubModal = true;
+                } else if (this.tipoClaveConfirmada === 'Patrón de desbloqueo' || this.tipoClaveSeleccionada === 'Patrón de desbloqueo') {
+                    this.tempPatronSecuencia = this.extraerSecuenciaPatron(this.formCard.dispositivo.clave_de_acceso || this.claveAccesoValor);
+                    this.tipoClaveSeleccionada = 'Patrón de desbloqueo';
+                    this.openClaveSubModal = true;
+                }
+            },
+
+            extraerPin(texto) {
+                if (!texto || texto === 'Sin clave' || texto === 'Huella / Face ID') return '';
+                return texto.replace(/^PIN:\s*/i, '').replace(/^Contraseña:\s*/i, '');
+            },
+
+            extraerSecuenciaPatron(texto) {
+                if (!texto) return [];
+                const match = texto.match(/Patr[oó]n:\s*([0-9\-]+)/i);
+                if (match) {
+                    return match[1].split('-').map(Number).filter(n => n >= 1 && n <= 9);
+                }
+                if (/^[1-9](\-[1-9])+$/.test(texto.trim())) {
+                    return texto.trim().split('-').map(Number);
+                }
+                return [];
+            },
+
+            esPatron(texto) {
+                if (!texto) return false;
+                return texto.toLowerCase().includes('patrón') || texto.toLowerCase().includes('patron') || /^[1-9](\-[1-9])+$/.test(texto.trim());
+            },
+
+            obtenerPosPunto(num) {
+                const mapa = {
+                    1: { x: 50, y: 50 },
+                    2: { x: 150, y: 50 },
+                    3: { x: 250, y: 50 },
+                    4: { x: 50, y: 150 },
+                    5: { x: 150, y: 150 },
+                    6: { x: 250, y: 150 },
+                    7: { x: 50, y: 250 },
+                    8: { x: 150, y: 250 },
+                    9: { x: 250, y: 250 }
+                };
+                return mapa[num] || { x: 150, y: 150 };
+            },
+
+            generarPuntosPolyline(secuencia) {
+                if (!secuencia || !secuencia.length) return '';
+                return secuencia.map(n => {
+                    const p = this.obtenerPosPunto(n);
+                    return `${p.x},${p.y}`;
+                }).join(' ');
+            },
+
+            obtenerPuntoCercano(x, y) {
+                for (let i = 1; i <= 9; i++) {
+                    const p = this.obtenerPosPunto(i);
+                    const dist = Math.hypot(x - p.x, y - p.y);
+                    if (dist <= 36) {
+                        return i;
+                    }
+                }
+                return null;
+            },
+
+            actualizarPunteroDesdeEvento(e, container) {
+                if (!container) return;
+                const rect = container.getBoundingClientRect();
+                const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+                const scaleX = 300 / rect.width;
+                const scaleY = 300 / rect.height;
+                const x = Math.max(0, Math.min(300, (clientX - rect.left) * scaleX));
+                const y = Math.max(0, Math.min(300, (clientY - rect.top) * scaleY));
+                this.patternCoords = { x, y };
+
+                const punto = this.obtenerPuntoCercano(x, y);
+                if (punto && !this.tempPatronSecuencia.includes(punto)) {
+                    this.tempPatronSecuencia.push(punto);
+                }
+            },
+
+            iniciarTrazo(e, container) {
+                this.isDrawingPattern = true;
+                this.actualizarPunteroDesdeEvento(e, container);
+            },
+
+            moverTrazo(e, container) {
+                if (!this.isDrawingPattern) return;
+                this.actualizarPunteroDesdeEvento(e, container);
+            },
+
+            finalizarTrazo() {
+                this.isDrawingPattern = false;
+            },
+
+            hacerClicEnPunto(num) {
+                if (!this.tempPatronSecuencia.includes(num)) {
+                    this.tempPatronSecuencia.push(num);
+                }
+            },
+
+            limpiarPatron() {
+                this.tempPatronSecuencia = [];
+                this.isDrawingPattern = false;
+            },
+
+            verPatronEnDetalle(item) {
+                if (!item) return;
+                this.visorPatronSecuencia = this.extraerSecuenciaPatron(item.clave_de_acceso);
+                this.visorPatronTitulo = `${item.codigo_seguimiento || ''} - ${item.dispositivo_marca_modelo || ''}`;
+                this.openPatternViewerModal = true;
             },
 
             actualizarSearchTarget(r) {
@@ -662,6 +895,20 @@
                 } finally {
                     this.isSavingCard.financiero = false;
                 }
+            },
+
+            // Modal Nueva Reparación
+            abrirModalNuevaReparacion() {
+                this.tipoClaveSeleccionada = 'Sin clave';
+                this.tipoClaveConfirmada = 'Sin clave';
+                this.claveAccesoValor = 'Sin clave';
+                this.tempPinValor = '';
+                this.tempPatronSecuencia = [];
+                this.openNewModal = true;
+            },
+
+            cerrarModalNuevaReparacion() {
+                this.openNewModal = false;
             }
         }"
     >
@@ -717,16 +964,7 @@
                     </div>
 
                     {{-- Botón Nueva Reparación --}}
-                    <button
-                        type="button"
-                        @click="openNewModal = true"
-                        class="h-16 rounded-2xl bg-primary px-8 text-lg font-bold text-white transition-all hover:bg-primary-hover active:scale-[0.98] shadow-md flex items-center gap-2.5 cursor-pointer shrink-0"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        <span>+ Nueva Reparación</span>
-                    </button>
+                    <x-btn-nueva-reparacion />
 
                 </div>
 
@@ -966,20 +1204,7 @@
                                     </svg>
                                 </button>
 
-                                {{-- 2. Ícono de Edición Rápida --}}
-                                <button
-                                    type="button"
-                                    @click.stop="abrirSlideOver(item)"
-                                    class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#141c25] border border-border/40 text-text-disabled hover:text-white hover:border-primary/60 hover:bg-primary/20 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer shadow-sm"
-                                    title="Editar orden / datos"
-                                    aria-label="Editar orden"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                    </svg>
-                                </button>
-
-                                {{-- 3. Ícono de Flecha (>) / Detalle --}}
+                                {{-- 2. Ícono de Flecha (>) / Detalle --}}
                                 <button
                                     type="button"
                                     @click.stop="abrirSlideOver(item)"
@@ -1046,7 +1271,7 @@
                     </p>
                     <button
                         type="button"
-                        @click="openNewModal = true"
+                        @click="abrirModalNuevaReparacion()"
                         class="mt-6 rounded-2xl bg-primary hover:bg-primary-hover px-8 py-3.5 text-sm font-bold text-white transition-all shadow-lg active:scale-95 cursor-pointer"
                     >
                         + Registrar Primer Servicio
@@ -1342,9 +1567,25 @@
                                             <span class="text-white font-bold text-sm mt-0.5 block" x-text="selectedReparacion.dispositivo_marca_modelo"></span>
                                         </div>
 
-                                        <div class="rounded-xl bg-[#141c25] p-3 border border-border/20">
+                                        <div class="rounded-xl bg-[#141c25] p-3 border border-border/20 flex flex-col justify-between gap-1.5">
                                             <span class="text-text-disabled font-semibold block">Clave de Acceso</span>
-                                            <span class="text-amber-300 font-mono font-bold text-sm mt-0.5 block" x-text="selectedReparacion.clave_de_acceso"></span>
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="text-amber-300 font-mono font-bold text-sm truncate" x-text="selectedReparacion.clave_de_acceso"></span>
+                                                <template x-if="esPatron(selectedReparacion?.clave_de_acceso)">
+                                                    <button
+                                                        type="button"
+                                                        @click="verPatronEnDetalle(selectedReparacion)"
+                                                        class="px-2.5 py-1 rounded-lg bg-[#0081cc]/20 hover:bg-[#0081cc] text-[#33b4ff] hover:text-white border border-[#0081cc]/40 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shrink-0 shadow-sm"
+                                                        title="Ver patrón gráfico en 3x3"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                                        </svg>
+                                                        <span>Ver Patrón</span>
+                                                    </button>
+                                                </template>
+                                            </div>
                                         </div>
 
                                         <div class="rounded-xl bg-[#141c25] p-3 border border-border/20 sm:col-span-2 flex items-center justify-between">
@@ -1376,9 +1617,61 @@
                                                 <input type="text" x-model="formCard.dispositivo.imei_o_serie" class="w-full rounded-xl bg-[#141c25] px-3 py-2 text-xs font-medium text-white border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all" placeholder="Ej: 354892019283741">
                                             </div>
                                             <div>
-                                                <label class="text-[11px] font-semibold text-text-disabled block mb-1">Clave de Acceso / PIN</label>
-                                                <input type="text" x-model="formCard.dispositivo.clave_de_acceso" class="w-full rounded-xl bg-[#141c25] px-3 py-2 text-xs font-medium text-amber-300 font-mono border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all" placeholder="Ej: 1234 o Patrón">
+                                                <label class="text-[11px] font-semibold text-text-disabled block mb-1">Tipo de Clave / Seguridad</label>
+                                                <div class="flex items-center gap-1.5">
+                                                    <div class="relative flex-1">
+                                                        <select
+                                                            x-model="tipoClaveSeleccionada"
+                                                            @change="onTipoClaveChange($event.target.value)"
+                                                            class="w-full rounded-xl bg-[#141c25] px-3 py-2 text-xs font-semibold text-white border border-border/30 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all appearance-none cursor-pointer pr-8"
+                                                        >
+                                                            <option value="Sin clave">Sin clave</option>
+                                                            <option value="PIN / Contraseña">PIN / Contraseña</option>
+                                                            <option value="Patrón de desbloqueo">Patrón de desbloqueo</option>
+                                                            <option value="Huella / Face ID">Huella / Face ID</option>
+                                                        </select>
+                                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
+                                                            <svg class="h-3.5 w-3.5 fill-current" viewBox="0 0 20 20">
+                                                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Botón Configurar / Dibujar Clave --}}
+                                                    <template x-if="tipoClaveSeleccionada === 'Patrón de desbloqueo' || tipoClaveSeleccionada === 'PIN / Contraseña'">
+                                                        <button
+                                                            type="button"
+                                                            @click="verOEditarClave()"
+                                                            class="px-2.5 py-2 rounded-xl bg-[#0081cc]/20 hover:bg-[#0081cc] text-[#33b4ff] hover:text-white border border-[#0081cc]/30 transition-all flex items-center gap-1 text-xs font-bold cursor-pointer shrink-0 shadow-sm"
+                                                            :title="tipoClaveSeleccionada === 'Patrón de desbloqueo' ? 'Dibujar / Cambiar Patrón' : 'Editar PIN'"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                                            </svg>
+                                                            <span x-text="tipoClaveSeleccionada === 'Patrón de desbloqueo' ? 'Dibujar' : 'Editar'"></span>
+                                                        </button>
+                                                    </template>
+                                                </div>
                                             </div>
+                                        </div>
+
+                                        {{-- Badge resumen de clave configurada en edición --}}
+                                        <div
+                                            x-show="formCard.dispositivo.clave_de_acceso && formCard.dispositivo.clave_de_acceso !== 'Sin clave'"
+                                            class="flex items-center justify-between px-3 py-1.5 rounded-xl bg-[#141c25] border border-border/30 text-xs"
+                                        >
+                                            <div class="flex items-center gap-1.5 truncate">
+                                                <span class="text-text-disabled">Configurada:</span>
+                                                <span class="text-amber-300 font-mono font-bold truncate" x-text="formCard.dispositivo.clave_de_acceso"></span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                @click="formCard.dispositivo.clave_de_acceso = 'Sin clave'; claveAccesoValor = 'Sin clave'; tipoClaveConfirmada = 'Sin clave'; tipoClaveSeleccionada = 'Sin clave'"
+                                                class="text-danger hover:text-red-400 font-bold ml-2 cursor-pointer text-[11px] hover:underline shrink-0"
+                                                title="Quitar clave"
+                                            >
+                                                Quitar
+                                            </button>
                                         </div>
                                         <div class="flex items-center justify-end gap-2 pt-1.5 border-t border-border/20 mt-1">
                                             <button type="button" @click="cancelarEdicion('dispositivo')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-text-disabled hover:text-white hover:bg-surface transition-colors cursor-pointer">Cancelar</button>
@@ -1781,261 +2074,355 @@
 
 
         {{-- =========================================================
-            5. MODAL NUEVA REPARACIÓN (Registro Completo y Directo)
+            5. MODAL NUEVA REPARACIÓN (Componente Reutilizable)
         ========================================================== --}}
+        <x-modal-nueva-reparacion :action="route('reparaciones.store')" />
+
+        {{-- =========================================
+            SUB-MODAL CLAVE DE ACCESO (PIN & Patrón 3x3)
+        ========================================== --}}
+        @php
+            $puntosCoords = [
+                1 => ['top' => '16.66%', 'left' => '16.66%'],
+                2 => ['top' => '16.66%', 'left' => '50%'],
+                3 => ['top' => '16.66%', 'left' => '83.33%'],
+                4 => ['top' => '50%', 'left' => '16.66%'],
+                5 => ['top' => '50%', 'left' => '50%'],
+                6 => ['top' => '50%', 'left' => '83.33%'],
+                7 => ['top' => '83.33%', 'left' => '16.66%'],
+                8 => ['top' => '83.33%', 'left' => '50%'],
+                9 => ['top' => '83.33%', 'left' => '83.33%'],
+            ];
+        @endphp
+
         <div
-            x-show="openNewModal"
+            x-show="openClaveSubModal"
             x-cloak
-            @keydown.escape.window="openNewModal = false"
-            class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+            @keydown.escape.window="if (openClaveSubModal) cancelarSubModalClave()"
+            class="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
             role="dialog"
             aria-modal="true"
         >
             {{-- Backdrop --}}
             <div
-                x-show="openNewModal"
-                x-transition:enter="transition ease-out duration-300"
+                x-show="openClaveSubModal"
+                x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100"
-                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
-                @click="openNewModal = false"
-                class="fixed inset-0 bg-black/75 backdrop-blur-sm"
+                @click="cancelarSubModalClave()"
+                class="fixed inset-0 bg-black/80 backdrop-blur-sm"
             ></div>
 
             {{-- Modal Box --}}
             <div
-                x-show="openNewModal"
-                x-transition:enter="transition ease-out duration-300"
+                x-show="openClaveSubModal"
+                x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-                class="relative z-10 w-full max-w-4xl max-h-[90vh] rounded-3xl bg-[#141c25] p-5 sm:p-7 shadow-2xl border border-border/30 overflow-y-auto my-auto custom-scrollbar"
+                class="relative z-10 w-full max-w-md rounded-3xl bg-[#141c25] p-5 sm:p-6 shadow-2xl border border-border/40 my-auto text-white"
             >
-                <form action="{{ route('reparaciones.store') }}" method="POST">
-                    @csrf
-
-                    <div class="flex items-center justify-between border-b border-border/30 pb-4 mb-5">
-                        <div class="flex items-center gap-3">
-                            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/20 text-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-6 h-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                {{-- Encabezado Sub-modal --}}
+                <div class="flex items-center justify-between border-b border-border/30 pb-3 mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 text-primary shrink-0">
+                            <template x-if="tipoClaveSeleccionada === 'PIN / Contraseña'">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
                                 </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-white tracking-wide">Nueva Orden de Reparación</h3>
-                                <p class="text-xs text-text-disabled">Registra el cliente, equipo y detalles de ingreso</p>
-                            </div>
+                            </template>
+                            <template x-if="tipoClaveSeleccionada === 'Patrón de desbloqueo'">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                </svg>
+                            </template>
                         </div>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-bold text-white tracking-wide" x-text="tipoClaveSeleccionada === 'PIN / Contraseña' ? 'PIN o Contraseña' : 'Patrón de Desbloqueo'"></h3>
+                            <p class="text-xs text-text-disabled" x-text="tipoClaveSeleccionada === 'PIN / Contraseña' ? 'Ingresa la clave para desbloquear el equipo' : 'Desliza o haz clic para conectar los puntos'"></p>
+                        </div>
+                    </div>
 
+                    <button
+                        type="button"
+                        @click="cancelarSubModalClave()"
+                        class="text-text-disabled hover:text-white transition-colors p-1.5 rounded-xl hover:bg-surface-hover cursor-pointer"
+                        title="Cerrar sin guardar"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- CONTENIDO 1: PIN / CONTRASEÑA --}}
+                <div x-show="tipoClaveSeleccionada === 'PIN / Contraseña'" class="py-2 flex flex-col gap-3">
+                    <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider">
+                        Contraseña o PIN numérico:
+                    </label>
+                    <div class="relative">
+                        <input
+                            :type="mostrarPinTexto ? 'text' : 'password'"
+                            x-model="tempPinValor"
+                            @keydown.enter.prevent="guardarSubModalClave()"
+                            placeholder="Ej: 1234, ABCD, Clave123..."
+                            class="h-12 w-full rounded-2xl bg-[#1c2530] px-4 pr-12 text-sm sm:text-base font-semibold text-white placeholder:text-gray-400 outline-none border border-border/40 focus:border-[#0081cc] focus:ring-2 focus:ring-[#0081cc]/25 transition-all shadow-inner"
+                        >
                         <button
                             type="button"
-                            @click="openNewModal = false"
-                            class="text-text-disabled hover:text-white transition-colors p-1.5 rounded-xl hover:bg-surface-hover cursor-pointer"
+                            @click="mostrarPinTexto = !mostrarPinTexto"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-white transition-colors cursor-pointer"
+                            title="Ver u ocultar texto"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            <svg x-show="!mostrarPinTexto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                            <svg x-show="mostrarPinTexto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
                             </svg>
                         </button>
                     </div>
+                </div>
 
-                    {{-- Grid 2 Columnas --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                {{-- CONTENIDO 2: PATRÓN 3x3 INTERACTIVO --}}
+                <div x-show="tipoClaveSeleccionada === 'Patrón de desbloqueo'" class="py-1 flex flex-col items-center gap-3">
+                    
+                    {{-- Lienzo Interactivo 3x3 --}}
+                    <div
+                        class="w-64 h-64 sm:w-72 sm:h-72 relative bg-[#1c2530] rounded-3xl border border-border/40 p-2 shadow-inner select-none touch-none overflow-hidden cursor-crosshair"
+                        @mousedown="iniciarTrazo($event, $el)"
+                        @mousemove="moverTrazo($event, $el)"
+                        @mouseup="finalizarTrazo()"
+                        @mouseleave="finalizarTrazo()"
+                        @touchstart.prevent="iniciarTrazo($event, $el)"
+                        @touchmove.prevent="moverTrazo($event, $el)"
+                        @touchend="finalizarTrazo()"
+                    >
+                        {{-- Capa SVG de Trazos --}}
+                        <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 300 300">
+                            {{-- Línea principal del patrón conectado --}}
+                            <polyline
+                                :points="generarPuntosPolyline(tempPatronSecuencia)"
+                                fill="none"
+                                stroke="#0081cc"
+                                stroke-width="6"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
 
-                        {{-- COLUMNA IZQUIERDA: CLIENTE / FALLA / SEÑA --}}
-                        <div class="flex flex-col gap-3 rounded-2xl bg-[#273343] p-4 sm:p-5 border border-border/20">
+                            {{-- Línea dinámica que sigue al cursor al dibujar --}}
+                            <template x-if="isDrawingPattern && tempPatronSecuencia.length > 0">
+                                <line
+                                    :x1="obtenerPosPunto(tempPatronSecuencia[tempPatronSecuencia.length - 1]).x"
+                                    :y1="obtenerPosPunto(tempPatronSecuencia[tempPatronSecuencia.length - 1]).y"
+                                    :x2="patternCoords.x"
+                                    :y2="patternCoords.y"
+                                    stroke="#33b4ff"
+                                    stroke-width="4"
+                                    stroke-linecap="round"
+                                    stroke-dasharray="6 4"
+                                    opacity="0.85"
+                                />
+                            </template>
+                        </svg>
 
-                            <div class="flex items-center justify-between pb-1 border-b border-white/10">
-                                <h4 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-primary">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                                    </svg>
-                                    Cliente
-                                </h4>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Nombre y Apellido *</label>
-                                <input
-                                    type="text"
-                                    name="nombre"
-                                    value="{{ old('nombre') }}"
-                                    placeholder="Nombre completo"
-                                    required
-                                    class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
+                        {{-- Los 9 Puntos Interactivos --}}
+                        @foreach($puntosCoords as $num => $pos)
+                            <div
+                                class="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer transition-transform duration-150 active:scale-90"
+                                style="top: {{ $pos['top'] }}; left: {{ $pos['left'] }}; width: 50px; height: 50px;"
+                                @click.stop="hacerClicEnPunto({{ $num }})"
+                            >
+                                <div
+                                    class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200"
+                                    :class="tempPatronSecuencia.includes({{ $num }})
+                                        ? 'bg-[#0081cc]/25 border-2 border-[#0081cc] shadow-[0_0_12px_rgba(0,129,204,0.7)] scale-110'
+                                        : 'bg-[#273343]/60 border border-border/40 hover:border-primary/50 hover:bg-surface-hover'"
                                 >
-                                @error('nombre')
-                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                                @enderror
+                                    <template x-if="tempPatronSecuencia.includes({{ $num }})">
+                                        <span
+                                            class="w-5 h-5 rounded-full bg-[#0081cc] text-white text-[11px] font-bold flex items-center justify-center shadow"
+                                            x-text="tempPatronSecuencia.indexOf({{ $num }}) + 1"
+                                        ></span>
+                                    </template>
+                                    <template x-if="!tempPatronSecuencia.includes({{ $num }})">
+                                        <span class="w-3 h-3 rounded-full bg-gray-400/60"></span>
+                                    </template>
+                                </div>
                             </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Teléfono / Celular *</label>
-                                <input
-                                    type="text"
-                                    name="telefono"
-                                    value="{{ old('telefono') }}"
-                                    placeholder="Ej: 11 2345-6789"
-                                    required
-                                    class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
-                                >
-                                @error('telefono')
-                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Email (Opcional)</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value="{{ old('email') }}"
-                                    placeholder="correo@ejemplo.com"
-                                    class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
-                                >
-                                @error('email')
-                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Falla reportada *</label>
-                                <textarea
-                                    name="falla_reportada"
-                                    rows="2"
-                                    placeholder="Detalle del problema reportado por el cliente"
-                                    required
-                                    class="w-full rounded-xl bg-[#1c2530] p-3 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner resize-none"
-                                >{{ old('falla_reportada') }}</textarea>
-                                @error('falla_reportada')
-                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Seña Inicial ($)</label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    name="sena"
-                                    value="{{ old('sena') }}"
-                                    placeholder="0"
-                                    class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
-                                >
-                                @error('sena')
-                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                        </div>
-
-                        {{-- COLUMNA DERECHA: DISPOSITIVO / CLAVE / IMEI / VALOR --}}
-                        <div class="flex flex-col gap-3 rounded-2xl bg-[#273343] p-4 sm:p-5 border border-border/20">
-
-                            <div class="flex items-center justify-between pb-1 border-b border-white/10">
-                                <h4 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-primary">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-                                    </svg>
-                                    Dispositivo
-                                </h4>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Marca y Modelo *</label>
-                                <input
-                                    type="text"
-                                    name="marca_y_modelo"
-                                    value="{{ old('marca_y_modelo') }}"
-                                    placeholder="Ej: Samsung S23, iPhone 14 Pro, Moto G84"
-                                    required
-                                    class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
-                                >
-                                @error('marca_y_modelo')
-                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Clave de Acceso / PIN / Patrón</label>
-                                <input
-                                    type="text"
-                                    name="clave_de_acceso"
-                                    value="{{ old('clave_de_acceso') }}"
-                                    placeholder="Ej: 1234, Patrón en L, Sin clave"
-                                    class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
-                                >
-                                @error('clave_de_acceso')
-                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">IMEI / Número de Serie</label>
-                                <input
-                                    type="text"
-                                    name="imei_o_serie"
-                                    value="{{ old('imei_o_serie') }}"
-                                    placeholder="Opcional pero recomendado"
-                                    class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
-                                >
-                                @error('imei_o_serie')
-                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Presupuesto / Valor Estimado ($)</label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    name="costo_estimado"
-                                    value="{{ old('costo_estimado') }}"
-                                    placeholder="Ej: 45000"
-                                    class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
-                                >
-                                @error('costo_estimado')
-                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Notas Internas (Opcional)</label>
-                                <textarea
-                                    name="notas_internas"
-                                    rows="2"
-                                    placeholder="Observaciones de ingreso, rayones previos, etc."
-                                    class="w-full rounded-xl bg-[#1c2530] p-3 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner resize-none"
-                                >{{ old('notas_internas') }}</textarea>
-                                @error('notas_internas')
-                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                        </div>
-
+                        @endforeach
                     </div>
 
-                    {{-- Pie del modal: Acciones --}}
-                    <div class="flex items-center justify-end gap-4 pt-5 mt-2 border-t border-border/20">
+                    {{-- Indicador y botón limpiar --}}
+                    <div class="w-full flex items-center justify-between px-1 text-xs">
+                        <span class="text-text-secondary truncate">
+                            <template x-if="tempPatronSecuencia.length > 0">
+                                <span>Secuencia: <strong class="text-primary-light font-mono" x-text="tempPatronSecuencia.join(' → ')"></strong></span>
+                            </template>
+                            <template x-if="tempPatronSecuencia.length === 0">
+                                <span class="italic text-text-disabled">Une al menos 2 puntos</span>
+                            </template>
+                        </span>
+
                         <button
                             type="button"
-                            @click="openNewModal = false"
-                            class="px-5 py-2.5 rounded-xl bg-surface-hover hover:bg-border/60 text-sm font-bold text-white transition-colors cursor-pointer"
+                            @click="limpiarPatron()"
+                            class="px-2.5 py-1 rounded-lg bg-surface-hover hover:bg-border/60 text-xs font-bold text-text-secondary hover:text-white transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                            title="Reiniciar trazo"
                         >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            class="h-11 sm:h-12 rounded-xl bg-primary hover:bg-primary-hover px-8 text-sm font-bold text-white transition-all shadow-md active:scale-[0.98] cursor-pointer"
-                        >
-                            Guardar Reparación
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                            </svg>
+                            <span>Limpiar</span>
                         </button>
                     </div>
-                </form>
+
+                </div>
+
+                {{-- Pie del Sub-modal: Botones de Acción --}}
+                <div class="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-border/30">
+                    <button
+                        type="button"
+                        @click="cancelarSubModalClave()"
+                        class="px-4 py-2.5 rounded-xl bg-surface-hover hover:bg-[#364252] text-xs font-bold text-white transition-all cursor-pointer"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="guardarSubModalClave()"
+                        class="px-5 py-2.5 rounded-xl bg-[#0081cc] hover:bg-[#33b4ff] active:scale-95 text-xs font-bold text-white transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                        <span>Confirmar Clave</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- =========================================
+            MODAL VISOR DE PATRÓN EN DETALLE (3x3 Gráfico)
+        ========================================== --}}
+        <div
+            x-show="openPatternViewerModal"
+            x-cloak
+            @keydown.escape.window="openPatternViewerModal = false"
+            class="fixed inset-0 z-[80] flex items-center justify-center p-4 overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+        >
+            {{-- Backdrop --}}
+            <div
+                x-show="openPatternViewerModal"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                @click="openPatternViewerModal = false"
+                class="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            ></div>
+
+            {{-- Modal Box --}}
+            <div
+                x-show="openPatternViewerModal"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
+                class="relative z-10 w-full max-w-sm rounded-3xl bg-[#141c25] p-5 sm:p-6 shadow-2xl border border-border/40 my-auto text-white flex flex-col items-center"
+            >
+                <div class="w-full flex items-center justify-between pb-3 border-b border-border/30 mb-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/20 text-primary shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">Patrón de Desbloqueo</h3>
+                            <p class="text-[11px] text-text-disabled truncate max-w-[200px]" x-text="visorPatronTitulo"></p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="openPatternViewerModal = false"
+                        class="p-1.5 rounded-xl text-text-disabled hover:text-white hover:bg-surface-hover transition-colors cursor-pointer"
+                        title="Cerrar visor"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Canvas 3x3 Visor Reconstruido --}}
+                <div class="w-64 h-64 relative bg-[#1c2530] rounded-2xl border border-border/40 p-2 shadow-inner select-none overflow-hidden my-2">
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 300 300">
+                        <polyline
+                            :points="generarPuntosPolyline(visorPatronSecuencia)"
+                            fill="none"
+                            stroke="#0081cc"
+                            stroke-width="6"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+
+                    @foreach($puntosCoords as $num => $pos)
+                        <div
+                            class="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
+                            style="top: {{ $pos['top'] }}; left: {{ $pos['left'] }}; width: 46px; height: 46px;"
+                        >
+                            <div
+                                class="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+                                :class="visorPatronSecuencia.includes({{ $num }})
+                                    ? 'bg-[#0081cc]/25 border-2 border-[#0081cc] shadow-[0_0_10px_rgba(0,129,204,0.7)] scale-105'
+                                    : 'bg-[#273343]/60 border border-border/40'"
+                            >
+                                <template x-if="visorPatronSecuencia.includes({{ $num }})">
+                                    <span
+                                        class="w-5 h-5 rounded-full bg-[#0081cc] text-white text-[11px] font-bold flex items-center justify-center shadow"
+                                        x-text="visorPatronSecuencia.indexOf({{ $num }}) + 1"
+                                    ></span>
+                                </template>
+                                <template x-if="!visorPatronSecuencia.includes({{ $num }})">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-gray-500/50"></span>
+                                </template>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Secuencia en texto --}}
+                <div class="mt-2 w-full px-3 py-2 rounded-xl bg-[#1c2530] border border-border/30 text-xs font-mono text-center text-primary-light">
+                    <span class="text-text-secondary font-sans mr-1">Secuencia:</span>
+                    <strong x-text="visorPatronSecuencia.join(' → ')"></strong>
+                </div>
+
+                {{-- Botón Cerrar --}}
+                <div class="w-full flex justify-end mt-4 pt-3 border-t border-border/30">
+                    <button
+                        type="button"
+                        @click="openPatternViewerModal = false"
+                        class="w-full h-10 rounded-xl bg-surface-hover hover:bg-[#364252] text-xs font-bold text-white transition-all cursor-pointer"
+                    >
+                        Cerrar Visor
+                    </button>
+                </div>
             </div>
         </div>
 
