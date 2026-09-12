@@ -95,7 +95,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Nombre y Apellido *</label>
+                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Nombre y Apellido <span class="text-danger">*</span></label>
                             <input
                                 type="text"
                                 name="nombre"
@@ -110,7 +110,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Teléfono / Celular *</label>
+                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Teléfono / Celular <span class="text-danger">*</span></label>
                             <input
                                 type="text"
                                 name="telefono"
@@ -139,7 +139,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Falla reportada *</label>
+                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Falla reportada <span class="text-danger">*</span></label>
                             <textarea
                                 name="falla_reportada"
                                 rows="2"
@@ -182,7 +182,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Marca y Modelo *</label>
+                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Marca y Modelo <span class="text-danger">*</span></label>
                             <input
                                 type="text"
                                 name="marca_y_modelo"

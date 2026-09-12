@@ -9,13 +9,12 @@ use App\Http\Controllers\Clientes\ClientesController;
 use App\Http\Controllers\Cuenta\CuentaController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dispositivos\DispositivosController;
+use App\Http\Controllers\LandingPage\LandingPageController;
 use App\Http\Controllers\Negocios\NegocioController;
 use App\Http\Controllers\Reparacionse\ReparacionesController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::get('/', [LandingPageController::class, 'index'])->name('landing_page.index');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index')->middleware(['auth', 'negocios_id']);
 Route::post('/dashboard', [DashboardController::class, 'store'])->name('dashboard.store');
