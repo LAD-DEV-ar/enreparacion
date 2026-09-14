@@ -224,3 +224,7 @@ input[type="search"]::-ms-reveal {
 
     animation: shimmer 1.4s infinite;
 }
+
+html {
+    scroll-behavior: smooth;
+}

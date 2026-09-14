@@ -14,7 +14,7 @@ use App\Http\Controllers\Negocios\NegocioController;
 use App\Http\Controllers\Reparacionse\ReparacionesController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [LandingPageController::class, 'index'])->name('landing_page.index');
+Route::get('/', [LandingPageController::class, 'index'])->name('landing_page.index')->middleware('guest');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index')->middleware(['auth', 'negocios_id']);
 Route::post('/dashboard', [DashboardController::class, 'store'])->name('dashboard.store');
