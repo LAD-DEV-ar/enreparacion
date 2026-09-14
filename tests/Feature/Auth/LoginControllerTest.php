@@ -11,11 +11,11 @@ class LoginControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_root_url_redirects_to_login(): void
+    public function test_root_url_go_to_landing_page(): void
     {
         $response = $this->get('/');
 
-        $response->assertRedirect(route('login'));
+        $response->assertOk();
     }
 
     public function test_login_screen_can_be_rendered(): void
