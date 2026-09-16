@@ -36,6 +36,7 @@ Route::post('/reset-password', [RecuperarController::class, 'store'])->name('pas
 
 Route::get('/tu-negocio', [NegocioController::class, 'index'])->name('negocios')->middleware(['auth', 'have_negocios_id']);
 Route::post('/tu-negocio', [NegocioController::class, 'store'])->name('negocios.store');
+Route::post('/tu-negocio/suscribir', [NegocioController::class, 'suscribir'])->name('negocios.suscribir')->middleware('auth');
 
 Route::get('/verificar-email', [VerificarEmailController::class, 'index'])->name('verificar-email.index')->middleware('auth');
 Route::post('/verificar-email', [VerificarEmailController::class, 'store'])->name('verificar-email.store');
