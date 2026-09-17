@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckIfHaveNegociosId;
+use App\Http\Middleware\IfDoesntHaveASuscription;
 use App\Http\Middleware\IfHaveNegociosIdSendToDashboard;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'negocios_id' => CheckIfHaveNegociosId::class,
             'have_negocios_id' => IfHaveNegociosIdSendToDashboard::class,
+            'without_suscription' => IfDoesntHaveASuscription::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

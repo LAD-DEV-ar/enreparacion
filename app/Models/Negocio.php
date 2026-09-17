@@ -34,6 +34,11 @@ class Negocio extends Model
         return $this->hasMany(NotificacionCliente::class, 'negocios_id');
     }
 
+    public function suscripcion()
+    {
+        return $this->hasOne(Suscripcion::class, 'negocios_id');
+    }
+
     protected $fillable = [
         'nombre',
         'direccion',

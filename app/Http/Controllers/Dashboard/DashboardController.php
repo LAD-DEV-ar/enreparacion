@@ -105,6 +105,7 @@ class DashboardController extends Controller
             'clave_de_acceso' => ['nullable', 'string', 'max:255'],
             'imei_o_serie' => ['nullable', 'string', 'max:255'],
             'costo_estimado' => ['nullable', 'numeric'],
+            'notas_internas' => ['nullable', 'string'],
         ], [
             'nombre.required' => 'El nombre del cliente es obligatorio.',
             'telefono.required' => 'El teléfono es obligatorio.',
@@ -144,7 +145,7 @@ class DashboardController extends Controller
                 // 'estado' => $validated['estado'],
                 'costo_estimado' => $validated['costo_estimado'],
                 'sena' => $validated['sena'],
-                // 'notas_internas' => $validated['notas_internas'],
+                'notas_internas' => $validated['notas_internas'] ?? null,
                 'codigo_seguimiento' => $codigo_seguimiento,
             ]);
 
