@@ -17,13 +17,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingPageController::class, 'index'])->name('landing_page.index')->middleware('guest');
 
-
 Route::middleware('without_suscription')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index')->middleware(['auth', 'negocios_id']);
     Route::get('/reparaciones', [ReparacionesController::class, 'index'])->name('reparaciones.index')->middleware(['auth', 'negocios_id']);
     Route::get('/clientes', [ClientesController::class, 'index'])->name('clientes.index')->middleware(['auth', 'negocios_id']);
     Route::get('/cuenta/configuracion', [CuentaController::class, 'index'])->name('cuenta.index')->middleware(['auth', 'negocios_id']);
 });
+
+Route::middleware('verified_email')->group( function () {
+    Route::get('/planes', [PlanesController::class, 'index'])->name('planes.index')->middleware('auth');
+    Route::get('/tu-negocio', [NegocioController::class, 'index'])->name('negocios')->middleware(['auth', 'have_negocios_id']);
+});
+
 
 Route::post('/dashboard', [DashboardController::class, 'store'])->name('dashboard.store');
 Route::patch('/dashboard/reparaciones/{reparacion}/estado', [DashboardController::class, 'updateEstado'])->name('dashboard.reparaciones.update-estado')->middleware(['auth', 'negocios_id']);
@@ -42,11 +47,9 @@ Route::post('/auth/olvide', [OlvideController::class, 'store'])->name('olvide.st
 Route::get('/reset-password/{token}', [RecuperarController::class, 'index'])->name('password.reset');
 Route::post('/reset-password', [RecuperarController::class, 'store'])->name('password.store');
 
-Route::get('/tu-negocio', [NegocioController::class, 'index'])->name('negocios')->middleware(['auth', 'have_negocios_id']);
 Route::post('/tu-negocio', [NegocioController::class, 'store'])->name('negocios.store');
 Route::post('/tu-negocio/suscribir', [NegocioController::class, 'suscribir'])->name('negocios.suscribir')->middleware('auth');
 
-Route::get('/planes', [PlanesController::class, 'index'])->name('planes.index')->middleware('auth');
 
 Route::get('/verificar-email', [VerificarEmailController::class, 'index'])->name('verificar-email.index')->middleware('auth');
 Route::post('/verificar-email', [VerificarEmailController::class, 'store'])->name('verificar-email.store');

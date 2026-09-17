@@ -6,7 +6,9 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class IfHaveNegociosIdSendToDashboard
+use function PHPUnit\Framework\isEmpty;
+
+class IfDoesntVerifiedEmail
 {
     /**
      * Handle an incoming request.
@@ -16,9 +18,8 @@ class IfHaveNegociosIdSendToDashboard
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-
-        if (!empty($user->negocios_id)) {
-            return redirect()->route('dashboard.index');
+        if (!$user->email_verified_at){
+            return redirect()->route('verificar-email.index');
         }
 
         return $next($request);

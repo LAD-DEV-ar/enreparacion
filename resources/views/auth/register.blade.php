@@ -79,6 +79,21 @@
                         @enderror
                     </div>
 
+                    <div>
+                        <input 
+                            type="checkbox"
+                            name="terms"
+                            required
+                            id="terms"
+                            value="1"
+                        >
+                        <label for="terms" class="text-text-secondary text-sm">Acepto los Terminos y Condiciones y la Politica de Privacidad</label>
+                        
+                        @error('terms')
+                            <p class="text-red-400 text-xs mt-1 px-3 font-medium">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     {{-- Botón de envío --}}
                     <div class="pt-2">
                         <button

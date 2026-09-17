@@ -23,7 +23,7 @@ use App\Notifications\ResetPasswordNotification;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'negocios_id', 'telefono', 'rol'])]
+#[Fillable(['name', 'email', 'password', 'negocios_id', 'telefono', 'rol', 'terms_version', 'accepted_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -61,6 +61,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'accepted_at' => 'datetime',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];

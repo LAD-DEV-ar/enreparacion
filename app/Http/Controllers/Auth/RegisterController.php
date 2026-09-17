@@ -20,10 +20,12 @@ class RegisterController extends Controller
 
     public function store(Request $request)
     {
+        // dd(request()->all());
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
+            'terms' => ['required', 'accepted']
         ], [
             'name.required' => 'El nombre es obligatorio.',
             'email.required' => 'El correo electrónico es obligatorio.',
@@ -31,6 +33,8 @@ class RegisterController extends Controller
             'email.unique' => 'Este correo electrónico ya está registrado.',
             'password.required' => 'La contraseña es obligatoria.',
             'password.min' => 'La contraseña debe tener al menos 6 caracteres.',
+            'terms.required' => 'Debés aceptar los términos y condiciones para continuar.',
+            'terms.accepted' => 'Debés aceptar los términos y condiciones para continuar.',
         ]);
 
         $user = DB::transaction(function () use ($validated) {
@@ -38,6 +42,8 @@ class RegisterController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
+                'terms_version' => '1.0',
+                'accepted_at' => now(),
             ]);
 
             $code = random_int(10000, 99999);

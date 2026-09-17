@@ -16,12 +16,19 @@ class IfDoesntHaveASuscription
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $suscripcion = $request->user()->negocio->suscripcion;
+        $usuario = $request->user();
+        $negocio = $usuario->negocio;
+    
+        if (!$negocio) {
+            return redirect()->route('negocios');
+        }
+    
+        $suscripcion = $negocio->suscripcion;
 
         if (!$suscripcion || $suscripcion->estado !== 'activa') {
             return redirect()->route('planes.index');
         }
-        
+    
         return $next($request);
     }
 }
