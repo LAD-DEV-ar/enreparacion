@@ -17,7 +17,7 @@ class IfHaveNegociosIdSendToDashboard
     {
         $user = $request->user();
 
-        if (!empty($user->negocios_id)) {
+        if (! empty($user->negocios_id)) {
             return redirect()->route('dashboard.index');
         }
 

@@ -19,12 +19,12 @@ class SuscripcionFactory extends Factory
         $inicio = fake()->dateTimeBetween('-1 month', 'now');
 
         return [
-            'negocios_id'         => Negocio::factory(),
-            'plan_id'             => Plan::factory(),
-            'estado'              => true,
-            'inicio'              => $inicio,
-            'fin'                 => (clone $inicio)->modify('+1 month'),
-            'ultimo_pago'         => $inicio,
+            'negocios_id' => Negocio::factory(),
+            'plan_id' => Plan::factory(),
+            'estado' => true,
+            'inicio' => $inicio,
+            'fin' => (clone $inicio)->modify('+1 month'),
+            'ultimo_pago' => $inicio,
             'proxima_facturacion' => (clone $inicio)->modify('+1 month'),
         ];
     }

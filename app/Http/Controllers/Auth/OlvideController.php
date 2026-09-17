@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\User;
-use App\Mail\OlvideContraseña;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 
 class OlvideController extends Controller
@@ -15,10 +13,11 @@ class OlvideController extends Controller
     {
         return view('auth.olvide');
     }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'email' => ['required', 'string', 'email', 'max:255', 'exists:users,email']
+            'email' => ['required', 'string', 'email', 'max:255', 'exists:users,email'],
         ], [
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'Ingrese un correo electrónico válido.',

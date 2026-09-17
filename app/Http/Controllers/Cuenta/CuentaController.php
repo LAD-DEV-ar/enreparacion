@@ -22,12 +22,12 @@ class CuentaController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'telefono' => ['nullable', 'string', 'max:20'],
         ], [
             'name.required' => 'El nombre es obligatorio.',
-            'name.max'      => 'El nombre no puede superar los 255 caracteres.',
-            'telefono.max'  => 'El teléfono no puede superar los 20 caracteres.',
+            'name.max' => 'El nombre no puede superar los 255 caracteres.',
+            'telefono.max' => 'El teléfono no puede superar los 20 caracteres.',
         ]);
 
         $user->update($validated);
@@ -40,14 +40,14 @@ class CuentaController extends Controller
         $negocio = Auth::user()->negocio;
 
         $validated = $request->validate([
-            'nombre'    => ['required', 'string', 'max:255'],
-            'telefono'  => ['nullable', 'string', 'max:50'],
+            'nombre' => ['required', 'string', 'max:255'],
+            'telefono' => ['nullable', 'string', 'max:50'],
             'direccion' => ['nullable', 'string', 'max:255'],
         ], [
             'nombre.required' => 'El nombre del negocio es obligatorio.',
-            'nombre.max'      => 'El nombre no puede superar los 255 caracteres.',
-            'telefono.max'    => 'El teléfono no puede superar los 50 caracteres.',
-            'direccion.max'   => 'La dirección no puede superar los 255 caracteres.',
+            'nombre.max' => 'El nombre no puede superar los 255 caracteres.',
+            'telefono.max' => 'El teléfono no puede superar los 50 caracteres.',
+            'direccion.max' => 'La dirección no puede superar los 255 caracteres.',
         ]);
 
         $negocio->update($validated);
@@ -61,11 +61,11 @@ class CuentaController extends Controller
 
         $validated = $request->validate([
             'current_password' => ['required'],
-            'password'         => ['required', 'confirmed', Password::min(6)],
+            'password' => ['required', 'confirmed', Password::min(6)],
         ], [
             'current_password.required' => 'Ingresá tu contraseña actual.',
-            'password.required'         => 'La nueva contraseña es obligatoria.',
-            'password.confirmed'        => 'Las contraseñas no coinciden.',
+            'password.required' => 'La nueva contraseña es obligatoria.',
+            'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 
         if (! Hash::check($validated['current_password'], $user->password)) {

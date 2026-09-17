@@ -1,10 +1,10 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Auth\VerificarEmailController;
 use App\Http\Controllers\Auth\OlvideController;
 use App\Http\Controllers\Auth\RecuperarController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\VerificarEmailController;
 use App\Http\Controllers\Clientes\ClientesController;
 use App\Http\Controllers\Cuenta\CuentaController;
 use App\Http\Controllers\Dashboard\DashboardController;
@@ -24,11 +24,10 @@ Route::middleware('without_suscription')->group(function () {
     Route::get('/cuenta/configuracion', [CuentaController::class, 'index'])->name('cuenta.index')->middleware(['auth', 'negocios_id']);
 });
 
-Route::middleware('verified_email')->group( function () {
+Route::middleware('verified_email')->group(function () {
     Route::get('/planes', [PlanesController::class, 'index'])->name('planes.index')->middleware('auth');
     Route::get('/tu-negocio', [NegocioController::class, 'index'])->name('negocios')->middleware(['auth', 'have_negocios_id']);
 });
-
 
 Route::post('/dashboard', [DashboardController::class, 'store'])->name('dashboard.store');
 Route::patch('/dashboard/reparaciones/{reparacion}/estado', [DashboardController::class, 'updateEstado'])->name('dashboard.reparaciones.update-estado')->middleware(['auth', 'negocios_id']);
@@ -50,11 +49,9 @@ Route::post('/reset-password', [RecuperarController::class, 'store'])->name('pas
 Route::post('/tu-negocio', [NegocioController::class, 'store'])->name('negocios.store');
 Route::post('/tu-negocio/suscribir', [NegocioController::class, 'suscribir'])->name('negocios.suscribir')->middleware('auth');
 
-
 Route::get('/verificar-email', [VerificarEmailController::class, 'index'])->name('verificar-email.index')->middleware('auth');
 Route::post('/verificar-email', [VerificarEmailController::class, 'store'])->name('verificar-email.store');
 Route::post('/verificar-email/reenviar', [VerificarEmailController::class, 'resend'])->name('verificar-email.resend');
-
 
 Route::post('/reparaciones', [ReparacionesController::class, 'store'])->name('reparaciones.store')->middleware(['auth', 'negocios_id']);
 Route::patch('/reparaciones/{reparacion}', [ReparacionesController::class, 'update'])->name('reparaciones.update')->middleware(['auth', 'negocios_id']);
@@ -69,10 +66,10 @@ Route::patch('/cuenta/perfil', [CuentaController::class, 'updatePerfil'])->name(
 Route::patch('/cuenta/negocio', [CuentaController::class, 'updateNegocio'])->name('cuenta.update-negocio')->middleware(['auth', 'negocios_id']);
 Route::patch('/cuenta/password', [CuentaController::class, 'updatePassword'])->name('cuenta.update-password')->middleware(['auth', 'negocios_id']);
 
-Route::get('/legales', function(){
-    return view("legales.legales");
+Route::get('/legales', function () {
+    return view('legales.legales');
 });
 
-Route::get('/privacidad', function(){
-    return view("leagales.privacidad");
+Route::get('/privacidad', function () {
+    return view('legales.privacidad');
 });

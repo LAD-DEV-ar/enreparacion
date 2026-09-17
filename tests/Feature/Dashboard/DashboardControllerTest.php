@@ -29,7 +29,24 @@ class DashboardControllerTest extends TestCase
         $response->assertRedirect(route('negocios'));
     }
 
-    public function test_user_with_negocio_can_view_dashboard(): void
+    public function test_user_with_negocio_and_active_subscription_can_view_dashboard(): void
+    {
+        $negocio = Negocio::factory()->conSuscripcion()->create([
+            'nombre' => 'Servicio Técnico Pro',
+            'direccion' => 'Belgrano 450',
+            'telefono' => '1155443322',
+        ]);
+
+        $user = User::factory()->create([
+            'negocios_id' => $negocio->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.index'));
+
+        $response->assertStatus(200);
+    }
+
+    public function test_user_with_negocio_without_subscription_is_redirected_to_planes(): void
     {
         $negocio = Negocio::create([
             'nombre' => 'Servicio Técnico Pro',
@@ -43,7 +60,7 @@ class DashboardControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('dashboard.index'));
 
-        $response->assertStatus(200);
+        $response->assertRedirect(route('planes.index'));
     }
 
     public function test_user_can_create_reparacion_with_cliente_and_dispositivo(): void

@@ -10,11 +10,11 @@ class PlanSeeder extends Seeder
     public function run(): void
     {
         Plan::create([
-            'nombre'      => 'Plan Inicial',
+            'nombre' => 'Plan Inicial',
             'descripcion' => 'Luego del primer mes, la suscripción pasa a costar $22.999 por mes',
-            'precio'      => '0',
-            'activo'      => true,
+            'precio' => '0',
+            'activo' => true,
         ]);
-        $this->command->info("✔    Ya se inserto los datos del plan inicial");
+        $this->command->info('✔    Ya se inserto los datos del plan inicial');
     }
 }

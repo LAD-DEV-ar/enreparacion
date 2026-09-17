@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -16,8 +15,7 @@ class ResetPasswordNotification extends Notification
      */
     public function __construct(
         protected string $token
-    )
-    {
+    ) {
         //
     }
 
@@ -39,9 +37,9 @@ class ResetPasswordNotification extends Notification
         return (new MailMessage)
             ->subject('Restablecé tu contraseña - EnReparacion')
             ->view('emails.auth.olvide', [
-                'user'  => $notifiable,
+                'user' => $notifiable,
                 'token' => $this->token,
-                'url'   => url("/reset-password/" . $this->token . "?email=" . urlencode($notifiable->getEmailForPasswordReset())),
+                'url' => url('/reset-password/'.$this->token.'?email='.urlencode($notifiable->getEmailForPasswordReset())),
             ]);
     }
 

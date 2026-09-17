@@ -29,6 +29,7 @@ class RegisterControllerTest extends TestCase
             'name' => 'Usuario Test',
             'email' => 'test@enreparacion.com',
             'password' => 'password123',
+            'terms' => '1',
         ]);
 
         $this->assertAuthenticated();
@@ -38,10 +39,12 @@ class RegisterControllerTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'test@enreparacion.com',
             'name' => 'Usuario Test',
+            'terms_version' => '1.0',
         ]);
 
         $user = User::where('email', 'test@enreparacion.com')->first();
         $this->assertNotNull($user);
+        $this->assertNotNull($user->accepted_at);
         $this->assertDatabaseHas('email_verification_codes', [
             'users_id' => $user->id,
         ]);
@@ -55,7 +58,20 @@ class RegisterControllerTest extends TestCase
     {
         $response = $this->post(route('register.store'), []);
 
-        $response->assertSessionHasErrors(['name', 'email', 'password']);
+        $response->assertSessionHasErrors(['name', 'email', 'password', 'terms']);
+        $this->assertGuest();
+    }
+
+    public function test_registration_fails_if_terms_are_not_accepted(): void
+    {
+        $response = $this->post(route('register.store'), [
+            'name' => 'Usuario Test',
+            'email' => 'terms@enreparacion.com',
+            'password' => 'password123',
+            'terms' => '0',
+        ]);
+
+        $response->assertSessionHasErrors(['terms']);
         $this->assertGuest();
     }
 

@@ -4,6 +4,7 @@ namespace Tests\Feature\Negocios;
 
 use App\Models\Negocio;
 use App\Models\Plan;
+use App\Models\Suscripcion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -116,10 +117,10 @@ class NegocioControllerTest extends TestCase
     public function test_guest_cannot_subscribe(): void
     {
         $plan = Plan::create([
-            'nombre'      => 'Plan Inicial',
+            'nombre' => 'Plan Inicial',
             'descripcion' => 'Primer mes gratis',
-            'precio'      => '0',
-            'activo'      => true,
+            'precio' => '0',
+            'activo' => true,
         ]);
 
         $negocio = Negocio::create([
@@ -128,7 +129,7 @@ class NegocioControllerTest extends TestCase
 
         $response = $this->post(route('negocios.suscribir'), [
             'negocios_id' => $negocio->id,
-            'plan_id'     => $plan->id,
+            'plan_id' => $plan->id,
         ]);
 
         $response->assertRedirect(route('login'));
@@ -148,15 +149,15 @@ class NegocioControllerTest extends TestCase
         $user->save();
 
         $plan = Plan::create([
-            'nombre'      => 'Plan Inicial',
+            'nombre' => 'Plan Inicial',
             'descripcion' => 'Primer mes gratis',
-            'precio'      => '0',
-            'activo'      => true,
+            'precio' => '0',
+            'activo' => true,
         ]);
 
         $response = $this->actingAs($user)->post(route('negocios.suscribir'), [
             'negocios_id' => $negocio->id,
-            'plan_id'     => $plan->id,
+            'plan_id' => $plan->id,
         ]);
 
         $response->assertRedirect(route('dashboard.index'));
@@ -164,11 +165,11 @@ class NegocioControllerTest extends TestCase
 
         $this->assertDatabaseHas('suscripciones', [
             'negocios_id' => $negocio->id,
-            'plan_id'     => $plan->id,
-            'estado'      => true,
+            'plan_id' => $plan->id,
+            'estado' => true,
         ]);
 
-        $suscripcion = \App\Models\Suscripcion::where('negocios_id', $negocio->id)->first();
+        $suscripcion = Suscripcion::where('negocios_id', $negocio->id)->first();
         $this->assertNotNull($suscripcion);
         $this->assertTrue($suscripcion->estado);
         $this->assertNotNull($suscripcion->inicio);
@@ -184,10 +185,10 @@ class NegocioControllerTest extends TestCase
         ]);
 
         $plan = Plan::create([
-            'nombre'      => 'Plan Inicial',
+            'nombre' => 'Plan Inicial',
             'descripcion' => 'Primer mes gratis',
-            'precio'      => '0',
-            'activo'      => true,
+            'precio' => '0',
+            'activo' => true,
         ]);
 
         $response = $this->actingAs($user)->post(route('negocios.suscribir'), [
@@ -223,15 +224,15 @@ class NegocioControllerTest extends TestCase
         ]);
 
         $plan = Plan::create([
-            'nombre'      => 'Plan Inicial',
+            'nombre' => 'Plan Inicial',
             'descripcion' => 'Primer mes gratis',
-            'precio'      => '0',
-            'activo'      => true,
+            'precio' => '0',
+            'activo' => true,
         ]);
 
         $response = $this->actingAs($user)->post(route('negocios.suscribir'), [
             'negocios_id' => 9999,
-            'plan_id'     => $plan->id,
+            'plan_id' => $plan->id,
         ]);
 
         $response->assertSessionHasErrors(['negocios_id']);
@@ -250,7 +251,7 @@ class NegocioControllerTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('negocios.suscribir'), [
             'negocios_id' => $negocio->id,
-            'plan_id'     => 9999,
+            'plan_id' => 9999,
         ]);
 
         $response->assertSessionHasErrors(['plan_id']);

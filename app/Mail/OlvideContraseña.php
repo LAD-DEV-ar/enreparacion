@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
@@ -18,8 +17,7 @@ class OlvideContraseña extends Mailable
      * Create a new message instance.
      */
     public function __construct(
-    )
-    {
+    ) {
         //
     }
 
@@ -41,7 +39,7 @@ class OlvideContraseña extends Mailable
         return new Content(
             view: 'emails.auth.olvide',
             with: [
-                
+
             ],
         );
     }

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Traits\FormateaFechaArgentina;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class ClientesController extends Controller
 {
@@ -196,4 +195,3 @@ class ClientesController extends Controller
         ]);
     }
 }
-

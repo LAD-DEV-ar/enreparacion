@@ -184,7 +184,7 @@ class DashboardController extends Controller
         $emailEnviado = false;
         $emailMensaje = null;
 
-        if (!empty($validated['enviar_email'])) {
+        if (! empty($validated['enviar_email'])) {
             $reparacion->loadMissing(['dispositivo.cliente', 'negocio', 'usuario']);
             $resultadoNotificacion = $notificacionService->enviarNotificacionEstado(
                 reparacion: $reparacion,
@@ -197,11 +197,11 @@ class DashboardController extends Controller
             $emailMensaje = $resultadoNotificacion['message'] ?? null;
         }
 
-        $mensajeExito = 'Estado actualizado a ' . ($labels[$validated['estado']] ?? $validated['estado']) . '.';
+        $mensajeExito = 'Estado actualizado a '.($labels[$validated['estado']] ?? $validated['estado']).'.';
         if ($emailEnviado) {
             $mensajeExito .= ' Se envió la notificación por correo al cliente.';
-        } elseif (!empty($validated['enviar_email']) && !$emailEnviado && $emailMensaje) {
-            $mensajeExito .= ' (Aviso de email: ' . $emailMensaje . ')';
+        } elseif (! empty($validated['enviar_email']) && ! $emailEnviado && $emailMensaje) {
+            $mensajeExito .= ' (Aviso de email: '.$emailMensaje.')';
         }
 
         return response()->json([

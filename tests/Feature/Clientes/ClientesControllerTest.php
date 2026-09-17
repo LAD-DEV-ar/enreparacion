@@ -32,9 +32,19 @@ class ClientesControllerTest extends TestCase
         $response->assertRedirect(route('negocios'));
     }
 
-    public function test_user_with_negocio_can_view_clientes_page(): void
+    public function test_user_with_negocio_without_subscription_is_redirected_to_planes(): void
     {
         $negocio = Negocio::factory()->create();
+        $user = User::factory()->conNegocio($negocio)->create();
+
+        $response = $this->actingAs($user)->get(route('clientes.index'));
+
+        $response->assertRedirect(route('planes.index'));
+    }
+
+    public function test_user_with_negocio_can_view_clientes_page(): void
+    {
+        $negocio = Negocio::factory()->conSuscripcion()->create();
         $user = User::factory()->conNegocio($negocio)->create();
 
         $cliente = Cliente::factory()->paraNegocio($negocio)->create([
@@ -54,7 +64,7 @@ class ClientesControllerTest extends TestCase
 
     public function test_clientes_page_only_shows_clients_belonging_to_authenticated_users_negocio(): void
     {
-        $negocioA = Negocio::factory()->create();
+        $negocioA = Negocio::factory()->conSuscripcion()->create();
         $userA = User::factory()->conNegocio($negocioA)->create();
         $clienteA = Cliente::factory()->paraNegocio($negocioA)->create([
             'nombre' => 'Cliente Negocio A',
@@ -78,7 +88,7 @@ class ClientesControllerTest extends TestCase
 
     public function test_clientes_page_computes_counters_and_details_correctly(): void
     {
-        $negocio = Negocio::factory()->create();
+        $negocio = Negocio::factory()->conSuscripcion()->create();
         $user = User::factory()->conNegocio($negocio)->create();
 
         $cliente = Cliente::factory()->paraNegocio($negocio)->create([

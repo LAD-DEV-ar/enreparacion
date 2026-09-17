@@ -22,8 +22,8 @@ class RecuperarController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'token'    => ['required'],
-            'email'    => ['required', 'email'],
+            'token' => ['required'],
+            'email' => ['required', 'email'],
             'password' => [
                 'required',
                 'string',
@@ -31,12 +31,12 @@ class RecuperarController extends Controller
                 'confirmed',
             ],
         ], [
-            'token.required'       => 'El token de recuperación es obligatorio.',
-            'email.required'       => 'El correo electrónico es obligatorio.',
-            'email.email'          => 'El correo electrónico no es válido.',
-            'password.required'    => 'La contraseña es obligatoria.',
-            'password.min'         => 'La contraseña debe tener al menos 8 caracteres.',
-            'password.confirmed'   => 'Las contraseñas no coinciden.',
+            'token.required' => 'El token de recuperación es obligatorio.',
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'El correo electrónico no es válido.',
+            'password.required' => 'La contraseña es obligatoria.',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 
         $status = Password::reset(
@@ -44,7 +44,7 @@ class RecuperarController extends Controller
 
             function ($user, $password) {
                 $user->forceFill([
-                    'password'       => Hash::make($password),
+                    'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
                 ])->save();
 

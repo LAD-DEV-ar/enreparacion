@@ -8,7 +8,8 @@
             rounded-[32px]
             border-2 border-border
             bg-surface
-            px-10 py-5
+            px-10 pt-5 pb-10
+            mb-10
             text-text-primary
             shadow-lg"
                 >

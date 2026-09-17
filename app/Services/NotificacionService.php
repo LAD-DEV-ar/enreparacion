@@ -36,7 +36,7 @@ class NotificacionService
         $email = trim($cliente?->email ?? '');
 
         // Validación de existencia de correo
-        if (empty($email) || strtolower($email) === 'sin correo' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (empty($email) || strtolower($email) === 'sin correo' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return [
                 'success' => false,
                 'enviado' => false,
@@ -69,7 +69,7 @@ class NotificacionService
         } catch (Throwable $e) {
             $estadoEnvio = 'fallido';
             $errorMensaje = $e->getMessage();
-            Log::error("Error al enviar email de notificación de estado a {$email}: " . $e->getMessage(), [
+            Log::error("Error al enviar email de notificación de estado a {$email}: ".$e->getMessage(), [
                 'reparacion_id' => $reparacion->id,
                 'nuevo_estado' => $nuevoEstado,
                 'trace' => $e->getTraceAsString(),
@@ -96,7 +96,7 @@ class NotificacionService
                 ],
             ]);
         } catch (Throwable $e) {
-            Log::error("Error al registrar auditoría en notificacion_clientes: " . $e->getMessage());
+            Log::error('Error al registrar auditoría en notificacion_clientes: '.$e->getMessage());
         }
 
         if ($envioExitoso) {
@@ -147,11 +147,11 @@ class NotificacionService
         $dispositivo = $reparacion->dispositivo;
         $negocio = $reparacion->negocio;
 
-        $costoNum = (float)($reparacion->costo_estimado ?? 0);
-        $senaNum = (float)($reparacion->sena ?? 0);
-        $saldoNum = (float)($reparacion->saldo_pendiente ?? max(0, $costoNum - $senaNum));
+        $costoNum = (float) ($reparacion->costo_estimado ?? 0);
+        $senaNum = (float) ($reparacion->sena ?? 0);
+        $saldoNum = (float) ($reparacion->saldo_pendiente ?? max(0, $costoNum - $senaNum));
 
-        $codigo = $reparacion->codigo_seguimiento ? ('#' . $reparacion->codigo_seguimiento) : ('#' . $reparacion->id);
+        $codigo = $reparacion->codigo_seguimiento ? ('#'.$reparacion->codigo_seguimiento) : ('#'.$reparacion->id);
         $estadoLabel = self::ESTADO_LABELS[$nuevoEstado] ?? ucfirst($nuevoEstado);
 
         $variables = [
@@ -160,9 +160,9 @@ class NotificacionService
             '{codigo_seguimiento}' => $codigo,
             '{estado}' => $estadoLabel,
             '{falla}' => $reparacion->falla_reportada ?? 'No especificada',
-            '{costo_estimado}' => $costoNum > 0 ? ('$' . number_format($costoNum, 0, ',', '.')) : 'A convenir',
-            '{sena}' => $senaNum > 0 ? ('$' . number_format($senaNum, 0, ',', '.')) : '$0',
-            '{saldo_pendiente}' => '$' . number_format($saldoNum, 0, ',', '.'),
+            '{costo_estimado}' => $costoNum > 0 ? ('$'.number_format($costoNum, 0, ',', '.')) : 'A convenir',
+            '{sena}' => $senaNum > 0 ? ('$'.number_format($senaNum, 0, ',', '.')) : '$0',
+            '{saldo_pendiente}' => '$'.number_format($saldoNum, 0, ',', '.'),
             '{negocio_nombre}' => $negocio?->nombre ?? config('app.name', 'EnReparacion'),
             '{negocio_telefono}' => $negocio?->telefono ?? '',
             '{negocio_direccion}' => $negocio?->direccion ?? '',

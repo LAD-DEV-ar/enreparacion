@@ -15,10 +15,10 @@ class PlanFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre'      => fake()->randomElement(['Plan Inicial', 'Plan Pro', 'Plan Premium']),
+            'nombre' => fake()->randomElement(['Plan Inicial', 'Plan Pro', 'Plan Premium']),
             'descripcion' => fake()->sentence(),
-            'precio'      => fake()->randomFloat(2, 0, 50000),
-            'activo'      => true,
+            'precio' => fake()->randomFloat(2, 0, 50000),
+            'activo' => true,
         ];
     }
 

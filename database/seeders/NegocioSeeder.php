@@ -33,14 +33,14 @@ class NegocioSeeder extends Seeder
 
         $adminFijo = User::firstWhere('email', 'admin@test.com');
 
-        if (!$adminFijo) {
-        
+        if (! $adminFijo) {
+
             $negocioPrincipal = Negocio::factory()->create([
                 'nombre' => 'Mi Taller de Prueba',
                 'direccion' => 'Av. Siempre Viva 742',
                 'telefono' => '0351-4123456',
             ]);
-        
+
             $adminFijo = User::factory()
                 ->administrador()
                 ->conNegocio($negocioPrincipal)

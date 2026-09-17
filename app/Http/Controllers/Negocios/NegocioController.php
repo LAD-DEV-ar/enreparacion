@@ -25,17 +25,17 @@ class NegocioController extends Controller
         }
 
         $validated = $request->validate([
-            'nombre'    => ['required', 'string', 'max:255'],
+            'nombre' => ['required', 'string', 'max:255'],
             'direccion' => ['nullable', 'string', 'max:255'],
-            'telefono'  => ['nullable', 'string', 'max:255'],
+            'telefono' => ['nullable', 'string', 'max:255'],
         ], [
             'nombre.required' => 'El nombre del negocio es obligatorio.',
         ]);
 
         $negocio = Negocio::create([
-            'nombre'    => $validated['nombre'],
+            'nombre' => $validated['nombre'],
             'direccion' => $validated['direccion'] ?? null,
-            'telefono'  => $validated['telefono'] ?? null,
+            'telefono' => $validated['telefono'] ?? null,
         ]);
 
         $user->negocios_id = $negocio->id;
@@ -50,16 +50,16 @@ class NegocioController extends Controller
     {
         $validated = $request->validate([
             'negocios_id' => ['required', 'exists:negocios,id'],
-            'plan_id'     => ['required', 'exists:planes,id'],
+            'plan_id' => ['required', 'exists:planes,id'],
         ]);
 
         $suscripcion = Suscripcion::create([
-            'negocios_id'         => $validated['negocios_id'],
-            'plan_id'             => $validated['plan_id'],
-            'estado'              => true,
-            'inicio'              => now(),
-            'fin'                 => now()->addMonth(),
-            'ultimo_pago'         => now(),
+            'negocios_id' => $validated['negocios_id'],
+            'plan_id' => $validated['plan_id'],
+            'estado' => true,
+            'inicio' => now(),
+            'fin' => now()->addMonth(),
+            'ultimo_pago' => now(),
             'proxima_facturacion' => now()->addMonth(),
         ]);
 
