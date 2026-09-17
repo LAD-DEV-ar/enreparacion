@@ -66,3 +66,10 @@ Route::patch('/cuenta/perfil', [CuentaController::class, 'updatePerfil'])->name(
 Route::patch('/cuenta/negocio', [CuentaController::class, 'updateNegocio'])->name('cuenta.update-negocio')->middleware(['auth', 'negocios_id']);
 Route::patch('/cuenta/password', [CuentaController::class, 'updatePassword'])->name('cuenta.update-password')->middleware(['auth', 'negocios_id']);
 
+Route::get('/legales', function(){
+    return view("legales.legales");
+});
+
+Route::get('/privacidad', function(){
+    return view("leagales.privacidad");
+});
