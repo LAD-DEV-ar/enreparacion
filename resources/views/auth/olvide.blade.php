@@ -78,4 +78,5 @@
         </div>
 
     </main>
+    <x-footer></x-footer>
 @endsection

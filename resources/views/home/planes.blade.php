@@ -85,8 +85,11 @@
 
 
                 {{-- CTA --}}
-                <a href="/auth/register">
+                <form action="/planes/suscribir" method="POST">
+                    @csrf
                     <button
+                        type="submit"
+                        name="plan"
                         class="mt-6 w-full
                             rounded-2xl
                             bg-primary
@@ -97,10 +100,11 @@
                             hover:-translate-y-0.5
                             active:translate-y-0
                             cursor-pointer"
+                        value="1"
                     >
                         Suscribirse
                     </button>
-                </a>
+                </form>
 
 
                 {{-- Beneficios --}}

@@ -71,10 +71,11 @@
                         >
                             Ingresar
                         </button>
+                        <p class="text-text-secondary text-xs text-center pt-2">Al continuar, aceptas nuestros Términos y Condiciones y Política de Privacidad</p>
                     </div>
 
                     {{-- Enlace a Registro --}}
-                    <p class="pt-2 text-center text-sm text-slate-400">
+                    <p class="pt-1 text-center text-sm text-slate-400">
                         ¿No tienes cuenta?
                         <a href="{{ route('register.index') }}" class="text-[#0081cc] hover:text-[#33b4ff] font-semibold hover:underline transition-colors">
                             Regístrate
@@ -87,8 +88,10 @@
                         </a>
                     </p>
                 </form>
+
             </div>
 
         </div>
     </main>
+    <x-footer></x-footer>
 @endsection

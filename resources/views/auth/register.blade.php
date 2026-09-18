@@ -80,14 +80,15 @@
                     </div>
 
                     <div>
-                        <input 
+                        <input
+                            class="cursor-pointer"
                             type="checkbox"
                             name="terms"
                             required
                             id="terms"
                             value="1"
                         >
-                        <label for="terms" class="text-text-secondary text-sm">Acepto los Terminos y Condiciones y la Politica de Privacidad</label>
+                        <label for="terms" class="text-text-secondary text-sm">Acepto los <a href="{{ route('legales') }}" class="text-info underline">Terminos y Condiciones</a> y la <a href="{{ route('legales') }}" class="text-info underline">Politica de Privacidad</a></label>
                         
                         @error('terms')
                             <p class="text-red-400 text-xs mt-1 px-3 font-medium">{{ $message }}</p>
@@ -116,4 +117,5 @@
 
         </div>
     </main>
+    <x-footer></x-footer>
 @endsection

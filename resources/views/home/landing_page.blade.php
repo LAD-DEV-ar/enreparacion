@@ -2,13 +2,7 @@
 
 @section('main')
     <main class="w-full">
-        <nav class="sticky top-0 z-50 flex p-8 justify-between items-center">
-            <img src="{{ asset('favicon.svg') }}" alt="Logo enReparacion" class="w-12 h-12">
-            <div class="flex gap-6">
-                <a href="#quienes_somos" class="text-text-secondary">¿Quienes Somos?</a>
-                <a href="#precios" class="text-text-secondary">Precios</a>
-            </div>
-        </nav>
+        <x-header></x-header>
 
         <section class="flex p-8 gap-6 sm:gap-36 justify-center flex-col sm:flex-row">
             <div class="flex flex-col justify-center items-center">
@@ -85,7 +79,7 @@
                     rounded-[32px]
                     border-2 border-border
                     bg-surface
-                    px-10 py-5
+                    px-10 pt-5 pb-12
                     text-text-primary
                     shadow-lg"
             >
@@ -93,7 +87,7 @@
                 {{-- Header --}}
                 <div class="text-center">
 
-                    <h2 class="text-5xl font-bold tracking-tight">
+                    <h2 class="text-4xl font-bold tracking-tight">
                         Plan Inicial
                     </h2>
 
@@ -283,4 +277,5 @@
             </div>
         </section>
     </main>
+    <x-footer></x-footer>
 @endsection

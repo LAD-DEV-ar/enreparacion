@@ -26,6 +26,7 @@ Route::middleware('without_suscription')->group(function () {
 
 Route::middleware('verified_email')->group(function () {
     Route::get('/planes', [PlanesController::class, 'index'])->name('planes.index')->middleware('auth');
+    Route::post('/planes/suscribir', [PlanesController::class, 'store'])->name('planes.store')->middleware('auth');
     Route::get('/tu-negocio', [NegocioController::class, 'index'])->name('negocios')->middleware(['auth', 'have_negocios_id']);
 });
 
@@ -68,8 +69,8 @@ Route::patch('/cuenta/password', [CuentaController::class, 'updatePassword'])->n
 
 Route::get('/legales', function () {
     return view('legales.legales');
-});
+})->name('legales');
 
 Route::get('/privacidad', function () {
     return view('legales.privacidad');
-});
+})->name('privacidad');
