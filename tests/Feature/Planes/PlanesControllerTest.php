@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Planes;
 
+use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -26,7 +27,7 @@ class PlanesControllerTest extends TestCase
         $response->assertRedirect(route('verificar-email.index'));
     }
 
-    public function test_authenticated_and_verified_user_can_view_planes_screen(): void
+    public function test_authenticated_and_verified_user_can_view_planes_screen_without_plans(): void
     {
         $user = User::factory()->create();
 
@@ -34,7 +35,18 @@ class PlanesControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewIs('home.planes');
-        $response->assertSee('Plan Inicial');
+        $response->assertSee('No hay planes');
+        $response->assertSee('Actualmente no hay planes');
+    }
+    public function test_authenticated_and_verified_user_can_view_planes_screen(): void
+    {
+        $user = User::factory()->create();
+        Plan::factory()->create();
+        $response = $this->actingAs($user)->get(route('planes.index'));
+
+        $response->assertStatus(200);
+        $response->assertViewIs('home.planes');
+        $response->assertSee('Plan');
         $response->assertSee('Suscribirse');
     }
 }
