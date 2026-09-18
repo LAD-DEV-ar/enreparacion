@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Planes;
 
 use App\Http\Controllers\Controller;
+use App\Models\Plan;
 use App\Models\Suscripcion;
 use Illuminate\Http\Request;
 
@@ -10,7 +11,9 @@ class PlanesController extends Controller
 {
     public function index()
     {
-        return view('home.planes');
+        $planes = Plan::all();
+        $planes = $planes->all();
+        return view('home.planes', compact('planes'));
     }
     public function store(Request $request)
     {

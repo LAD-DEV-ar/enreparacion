@@ -2,16 +2,23 @@
 
 @section('main')
     <main class="flex flex-col items-center justify-center">
-        <h2 class="text-4xl p-6 text-text-primary">Selecciona el plan</h2>
-        <div
-            class="w-full max-w-[400px]
-            rounded-[32px]
-            border-2 border-border
-            bg-surface
-            px-10 pt-5 pb-10
-            mb-10
-            text-text-primary
-            shadow-lg"
+        <h2 class="text-4xl p-6 text-text-primary mt-6">Selecciona el plan</h2>
+        @empty($planes)
+        <div class="m-2 rounded-3xl border border-white/10 bg-white/5 p-6 md:p-10 backdrop-blur-md shadow-2xl text-[#F5F7FA]">
+            <h2 class="text-4xl font-bold text-center mb-4 text-text-primary">No hay planes</h2>
+            <p class="text-text-secondary">Actualmente no hay planes disponibles en la plataforma, espera a que un técnico se encargue de arreglar este problema.</p>
+        </div>
+            
+        @else
+            <div
+                class="w-full max-w-[400px]
+                rounded-[32px]
+                border-2 border-border
+                bg-surface
+                px-10 pt-5 pb-10
+                mb-10
+                text-text-primary
+                shadow-lg"
                 >
                 {{-- Header --}}
                 <div class="text-center">
@@ -208,5 +215,6 @@
                 </ul>
 
             </div>
+        @endempty
     </main>
 @endsection
