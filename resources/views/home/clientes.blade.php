@@ -2,7 +2,7 @@
 
 @section('main')
     <main
-        class="ml-56 min-h-screen pb-16"
+        class="lg:ml-56 pt-14 lg:pt-0 min-h-screen pb-16"
         x-data="{
             search: '',
             openNewClientModal: {{ $errors->any() ? 'true' : 'false' }},

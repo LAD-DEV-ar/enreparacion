@@ -35,7 +35,7 @@ class NegocioSeeder extends Seeder
 
         if (! $adminFijo) {
 
-            $negocioPrincipal = Negocio::factory()->create([
+            $negocioPrincipal = Negocio::factory()->conSuscripcion()->create([
                 'nombre' => 'Mi Taller de Prueba',
                 'direccion' => 'Av. Siempre Viva 742',
                 'telefono' => '0351-4123456',

@@ -234,13 +234,19 @@
             </div>
 
             {{-- Card de Plan --}}
+            @empty($planes)
+            <div class="m-2 rounded-3xl border border-white/10 bg-white/5 p-6 md:p-10 backdrop-blur-md shadow-2xl text-[#F5F7FA]">
+                <h2 class="text-4xl font-bold text-center mb-4 text-text-primary">No hay planes</h2>
+                <p class="text-text-secondary">Actualmente no hay planes disponibles en la plataforma, espera a que un técnico se encargue de arreglar este problema.</p>
+            </div>
+            @else
             <div
                 class="w-full rounded-[32px] border-2 border-border bg-surface px-10 py-5 text-text-primary shadow-lg"
             >
 
                 {{-- Header --}}
                 <div class="text-center">
-                    <h2 class="text-5xl font-bold tracking-tight">
+                    <h2 class="text-4xl font-bold tracking-tight">
                         Plan Inicial
                     </h2>
                     <div class="mt-2 h-px w-full bg-border"></div>
@@ -330,6 +336,7 @@
                 </ul>
 
             </div>
+            @endempty
 
         </div>
 

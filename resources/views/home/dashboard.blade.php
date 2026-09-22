@@ -1,7 +1,12 @@
 @extends('layout')
 
 @section('main')
-    <main class="ml-56 min-h-screen" x-data="{
+    <main
+        class="lg:ml-56 pt-14 lg:pt-0 min-h-screen"
+        x-init="window.addEventListener('resize', () => { isMobile = window.innerWidth < 1024 })"
+        x-data="{
+        activeTab: 'recibido',
+        isMobile: window.innerWidth < 1024,
         openNewModal: {{ $errors->any() ? 'true' : 'false' }},
         openDetailModal: false,
         search: '',
@@ -412,18 +417,18 @@
         }
     }">
         @include('components.sidebar')
-        <div class="px-12 py-10">
+        <div class="px-4 py-6 lg:px-12 lg:py-10">
 
 
             {{-- =========================================
                 HEADER
             ========================================== --}}
 
-            <div class="flex items-center gap-12">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-12">
 
 
                 {{-- Buscador --}}
-                <div class="relative flex-1">
+                <div class="relative w-full lg:flex-1">
 
                     {{-- Search icon --}}
                     <svg
@@ -453,17 +458,67 @@
 
 
                 {{-- Nueva reparación --}}
-                <x-btn-nueva-reparacion />
+                <x-btn-nueva-reparacion class="w-full justify-center lg:w-auto" />
 
             </div>
 
+
+            {{-- =========================================
+                TABS MÓVIL — Navegación entre columnas (solo < lg)
+            ========================================== --}}
+
+            <div class="lg:hidden mt-4 flex rounded-2xl bg-surface-hover p-1 gap-1">
+
+                <button
+                    @click="activeTab = 'recibido'"
+                    :class="activeTab === 'recibido'
+                        ? 'bg-background text-text-primary shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'"
+                    class="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-all cursor-pointer"
+                >
+                    Recibidos
+                    <span
+                        class="flex h-5 min-w-5 items-center justify-center rounded-full bg-surface-hover px-1.5 text-xs font-bold"
+                        x-text="recibidas.length"
+                    ></span>
+                </button>
+
+                <button
+                    @click="activeTab = 'en_reparacion'"
+                    :class="activeTab === 'en_reparacion'
+                        ? 'bg-background text-text-primary shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'"
+                    class="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-all cursor-pointer"
+                >
+                    En Rep.
+                    <span
+                        class="flex h-5 min-w-5 items-center justify-center rounded-full bg-surface-hover px-1.5 text-xs font-bold"
+                        x-text="enProceso.length"
+                    ></span>
+                </button>
+
+                <button
+                    @click="activeTab = 'listo'"
+                    :class="activeTab === 'listo'
+                        ? 'bg-background text-primary-light shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'"
+                    class="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-all cursor-pointer"
+                >
+                    Listos
+                    <span
+                        class="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/20 px-1.5 text-xs font-bold text-primary-light"
+                        x-text="listas.length"
+                    ></span>
+                </button>
+
+            </div>
 
 
             {{-- =========================================
                 ESTADOS DE REPARACIONES (Tablero Kanban Drag & Drop)
             ========================================== --}}
 
-            <div class="mt-8 grid grid-cols-3 gap-12">
+            <div class="mt-4 lg:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-12">
 
 
                 {{-- =====================================
@@ -471,7 +526,8 @@
                 ====================================== --}}
 
                 <div
-                    class="flex h-[560px] flex-col rounded-[30px] border-4 p-6 transition-all duration-200"
+                    x-show="!isMobile || activeTab === 'recibido'"
+                    class="flex h-[500px] lg:h-[560px] flex-col rounded-[24px] lg:rounded-[30px] border-4 p-4 sm:p-6 transition-all duration-200"
                     :class="dragOverColumn === 'recibido' ? 'border-primary ring-4 ring-primary/25 bg-primary/5' : 'border-border bg-background'"
                     @dragover.prevent="onDragOver('recibido')"
                     @dragenter.prevent="onDragOver('recibido')"
@@ -529,7 +585,19 @@
                                 </div>
 
                                 {{-- Footer: Botón Acción --}}
-                                <div class="flex items-center justify-end pt-1 border-t border-border/20">
+                                <div class="flex items-center justify-between pt-1 border-t border-border/20">
+                                    {{-- Mover a En Reparación (solo móvil) --}}
+                                    <button
+                                        type="button"
+                                        @click.stop="abrirModalConfirmacion(item, 'recibido', 'en_reparacion')"
+                                        class="lg:hidden flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-text-secondary bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
+                                        title="Mover a En Reparación"
+                                    >
+                                        En Rep.
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-3.5 w-3.5 shrink-0">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                        </svg>
+                                    </button>
                                     <button
                                         type="button"
                                         @click.stop="verDetalle(item)"
@@ -555,7 +623,8 @@
                 ====================================== --}}
 
                 <div
-                    class="flex h-[560px] flex-col rounded-[30px] border-4 p-6 transition-all duration-200"
+                    x-show="!isMobile || activeTab === 'en_reparacion'"
+                    class="flex h-[500px] lg:h-[560px] flex-col rounded-[24px] lg:rounded-[30px] border-4 p-4 sm:p-6 transition-all duration-200"
                     :class="dragOverColumn === 'en_reparacion' ? 'border-primary ring-4 ring-primary/25 bg-primary/5' : 'border-border bg-surface'"
                     @dragover.prevent="onDragOver('en_reparacion')"
                     @dragenter.prevent="onDragOver('en_reparacion')"
@@ -621,11 +690,39 @@
                                 </div>
 
                                 {{-- Footer: Botón Acción --}}
-                                <div class="flex items-center justify-end pt-1 border-t border-border/20">
+                                <div class="flex items-center justify-between gap-2 pt-1 border-t border-border/20">
+                                    <div class="flex items-center gap-1.5 lg:hidden">
+                                        {{-- Mover a Recibido (solo móvil) --}}
+                                        <button
+                                            type="button"
+                                            @click.stop="abrirModalConfirmacion(item, 'en_reparacion', 'recibido')"
+                                            class="flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-text-secondary bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
+                                            title="Volver a Recibidos"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-3.5 w-3.5 shrink-0">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                                            </svg>
+                                            <span>Rec.</span>
+                                        </button>
+
+                                        {{-- Mover a Listo (solo móvil) --}}
+                                        <button
+                                            type="button"
+                                            @click.stop="abrirModalConfirmacion(item, 'en_reparacion', 'listo')"
+                                            class="flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-primary-light bg-primary/20 hover:bg-primary/30 transition-colors cursor-pointer"
+                                            title="Mover a Listo"
+                                        >
+                                            <span>Listo</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-3.5 w-3.5 shrink-0">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
                                     <button
                                         type="button"
                                         @click.stop="verDetalle(item)"
-                                        class="flex h-9 w-11 items-center justify-center rounded-xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                                        class="flex h-9 w-11 items-center justify-center rounded-xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer ml-auto"
                                         title="Ver detalles de la reparación"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
@@ -647,7 +744,8 @@
                 ====================================== --}}
 
                 <div
-                    class="flex h-[560px] flex-col rounded-[30px] border-4 p-6 transition-all duration-200"
+                    x-show="!isMobile || activeTab === 'listo'"
+                    class="flex h-[500px] lg:h-[560px] flex-col rounded-[24px] lg:rounded-[30px] border-4 p-4 sm:p-6 transition-all duration-200"
                     :class="dragOverColumn === 'listo' ? 'border-primary ring-4 ring-primary/25 bg-primary/5' : 'border-primary-hover bg-surface-hover'"
                     @dragover.prevent="onDragOver('listo')"
                     @dragenter.prevent="onDragOver('listo')"
@@ -720,27 +818,42 @@
                                 </div>
 
                                 {{-- Footer: Botón Acción --}}
-                                <div class="flex gap-2 items-center justify-end pt-1 border-t border-border/20">
+                                <div class="flex items-center justify-between gap-2 pt-1 border-t border-border/20">
+                                    {{-- Mover de regreso a En Reparación (solo móvil) --}}
                                     <button
                                         type="button"
-                                        @click.stop="verDetalle(item)"
-                                        class="flex h-9 w-11 items-center justify-center rounded-xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
-                                        title="Ver detalles de la reparación"
+                                        @click.stop="abrirModalConfirmacion(item, 'listo', 'en_reparacion')"
+                                        class="lg:hidden flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-text-secondary bg-surface-hover hover:text-text-primary transition-colors cursor-pointer"
+                                        title="Volver a En Reparación"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-3.5 w-3.5 shrink-0">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                                         </svg>
+                                        <span>En Rep.</span>
                                     </button>
 
-                                    <button
-                                        type="button"
-                                        @click.stop="detallesDeEntrega(item)"
-                                        class="flex h-9 w-auto p-2 items-center justify-center rounded-xl bg-success/50 text-white shadow-md hover:bg-success/70 active:scale-95 transition-all cursor-pointer"
-                                        title="Ver detalles de la reparación"
-                                    >
-                                        <span class="text-sm font-bold tracking-wide uppercase text-text-primary">Entregar</span>
-                                    </button>
+                                    <div class="flex gap-2 items-center ml-auto">
+                                        <button
+                                            type="button"
+                                            @click.stop="verDetalle(item)"
+                                            class="flex h-9 w-11 items-center justify-center rounded-xl bg-[#0081cc] text-white shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                                            title="Ver detalles de la reparación"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.3" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            </svg>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            @click.stop="detallesDeEntrega(item)"
+                                            class="flex h-9 w-auto px-3 items-center justify-center rounded-xl bg-success/50 text-white shadow-md hover:bg-success/70 active:scale-95 transition-all cursor-pointer"
+                                            title="Marcar como entregado"
+                                        >
+                                            <span class="text-xs sm:text-sm font-bold tracking-wide uppercase text-text-primary">Entregar</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </template>

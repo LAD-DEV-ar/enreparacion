@@ -15,9 +15,10 @@ class PlanFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => fake()->randomElement(['Plan Inicial', 'Plan Pro', 'Plan Premium']),
-            'descripcion' => fake()->sentence(),
-            'precio' => fake()->randomFloat(2, 0, 50000),
+            'id' => 1,
+            'nombre' => 'Plan Inicial',
+            'descripcion' => 'Luego del primer mes gratis, la suscripción pasa a costar $22.999 por mes',
+            'precio' => '22999',
             'activo' => true,
         ];
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Negocios;
 
 use App\Http\Controllers\Controller;
 use App\Models\Negocio;
+use App\Models\Plan;
 use App\Models\Suscripcion;
 use Illuminate\Http\Request;
 
@@ -11,7 +12,9 @@ class NegocioController extends Controller
 {
     public function index()
     {
-        return view('negocios.registro-negocios');
+        $planes = Plan::all();
+        $planes = $planes->all();
+        return view('negocios.registro-negocios', compact('planes'));
     }
 
     public function store(Request $request)
