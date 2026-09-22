@@ -922,7 +922,7 @@
             <div class="flex flex-col gap-5">
 
                 {{-- Fila Principal: Buscador Grande Híbrido + Botón Nueva Reparación --}}
-                <div class="flex items-center justify-between gap-6">
+                <div class="flex flex-col lg:flex-row items-center justify-between gap-6">
 
                     {{-- La Barra Híbrida --}}
                     <div class="relative flex-1">
@@ -964,7 +964,7 @@
                     </div>
 
                     {{-- Botón Nueva Reparación --}}
-                    <x-btn-nueva-reparacion />
+                    <x-btn-nueva-reparacion class="w-full justify-center lg:w-auto"/>
 
                 </div>
 
