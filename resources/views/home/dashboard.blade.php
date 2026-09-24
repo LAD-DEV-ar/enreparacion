@@ -419,6 +419,31 @@
         @include('components.sidebar')
         <div class="px-4 py-6 lg:px-12 lg:py-10">
 
+            @if($diasPruebaRestantes)
+                <div class="mb-5 rounded-2xl border border-primary/30 bg-primary/10 px-5 py-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-semibold text-white">Estás en tu período de prueba</p>
+                            <p class="text-sm text-text-secondary">
+                                Te quedan <span class="font-bold text-white">{{ $diasPruebaRestantes }}</span> {{ $diasPruebaRestantes === 1 ? 'día' : 'días' }} gratis.
+                                Después podés seguir usando el sistema desde <a href="{{ route('planes.index') }}" class="font-semibold text-primary hover:underline">tus planes</a>.
+                            </p>
+                        </div>
+                        <a href="{{ route('planes.index') }}" class="shrink-0 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-hover">Pagar ahora</a>
+                    </div>
+                </div>
+            @elseif($pruebaVencida)
+                <div class="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-semibold text-white">Tu período de prueba terminó</p>
+                            <p class="text-sm text-text-secondary">Activá tu suscripción para seguir usando el sistema.</p>
+                        </div>
+                        <a href="{{ route('planes.index') }}" class="shrink-0 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-hover">Suscribirme</a>
+                    </div>
+                </div>
+            @endif
+
 
             {{-- =========================================
                 HEADER

@@ -17,7 +17,7 @@ class PlanFactory extends Factory
         return [
             'id' => 1,
             'nombre' => 'Plan Inicial',
-            'descripcion' => 'Luego del primer mes gratis, la suscripción pasa a costar $22.999 por mes',
+            'descripcion' => 'Acceso completo al sistema para gestionar reparaciones, clientes y notificaciones. Se cobra por mes.',
             'precio' => '22999',
             'activo' => true,
         ];

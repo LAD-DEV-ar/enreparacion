@@ -21,7 +21,7 @@ class UserSeeder extends Seeder
 
         $adminFijo = User::factory()->administrador()->conNegocio($negocioPrincipal)->create([
             'name' => 'Admin Principal',
-            'email' => 'admin@test.com',
+            'email' => 'test_user_2887582496948464712@testuser.com',
             'password' => bcrypt('password'),
         ]);
 

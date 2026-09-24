@@ -14,6 +14,7 @@ class NegocioController extends Controller
     {
         $planes = Plan::all();
         $planes = $planes->all();
+
         return view('negocios.registro-negocios', compact('planes'));
     }
 
@@ -44,29 +45,19 @@ class NegocioController extends Controller
         $user->negocios_id = $negocio->id;
         $user->save();
 
+        $trialEndsAt = now()->addDays((int) config('mercadopago.trial_days', 30));
+
+        Suscripcion::create([
+            'negocios_id' => $negocio->id,
+            'tipo' => 'trial',
+            'estado' => true,
+            'inicio' => now(),
+            'fin' => $trialEndsAt,
+            'proxima_facturacion' => $trialEndsAt,
+        ]);
+
         return response()->json([
             'negocio_id' => $negocio->id,
         ]);
-    }
-
-    public function suscribir(Request $request)
-    {
-        $validated = $request->validate([
-            'negocios_id' => ['required', 'exists:negocios,id'],
-            'plan_id' => ['required', 'exists:planes,id'],
-        ]);
-
-        $suscripcion = Suscripcion::create([
-            'negocios_id' => $validated['negocios_id'],
-            'plan_id' => $validated['plan_id'],
-            'estado' => true,
-            'inicio' => now(),
-            'fin' => now()->addMonth(),
-            'ultimo_pago' => now(),
-            'proxima_facturacion' => now()->addMonth(),
-        ]);
-
-        return redirect()->route('dashboard.index')
-            ->with('success', '¡Bienvenido! Tu negocio fue registrado y tu plan activado.');
     }
 }

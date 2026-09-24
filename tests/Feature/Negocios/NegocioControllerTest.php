@@ -3,7 +3,6 @@
 namespace Tests\Feature\Negocios;
 
 use App\Models\Negocio;
-use App\Models\Plan;
 use App\Models\Suscripcion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -112,149 +111,35 @@ class NegocioControllerTest extends TestCase
         $response->assertStatus(403);
     }
 
-    // ==================== Tests de Suscripción ====================
+    // ==================== Suscripción de prueba ====================
 
-    public function test_guest_cannot_subscribe(): void
-    {
-        $plan = Plan::create([
-            'nombre' => 'Plan Inicial',
-            'descripcion' => 'Primer mes gratis',
-            'precio' => '0',
-            'activo' => true,
-        ]);
-
-        $negocio = Negocio::create([
-            'nombre' => 'Reparaciones Express',
-        ]);
-
-        $response = $this->post(route('negocios.suscribir'), [
-            'negocios_id' => $negocio->id,
-            'plan_id' => $plan->id,
-        ]);
-
-        $response->assertRedirect(route('login'));
-    }
-
-    public function test_user_can_subscribe_to_a_plan(): void
+    public function test_registering_a_negocio_creates_a_trial_subscription(): void
     {
         $user = User::factory()->create([
             'negocios_id' => null,
         ]);
 
-        $negocio = Negocio::create([
+        $response = $this->actingAs($user)->postJson(route('negocios.store'), [
             'nombre' => 'Reparaciones Express',
         ]);
 
-        $user->negocios_id = $negocio->id;
-        $user->save();
+        $response->assertOk();
 
-        $plan = Plan::create([
-            'nombre' => 'Plan Inicial',
-            'descripcion' => 'Primer mes gratis',
-            'precio' => '0',
-            'activo' => true,
-        ]);
-
-        $response = $this->actingAs($user)->post(route('negocios.suscribir'), [
-            'negocios_id' => $negocio->id,
-            'plan_id' => $plan->id,
-        ]);
-
-        $response->assertRedirect(route('dashboard.index'));
-        $response->assertSessionHas('success');
+        $negocio = Negocio::where('nombre', 'Reparaciones Express')->firstOrFail();
 
         $this->assertDatabaseHas('suscripciones', [
             'negocios_id' => $negocio->id,
-            'plan_id' => $plan->id,
+            'tipo' => 'trial',
             'estado' => true,
         ]);
 
-        $suscripcion = Suscripcion::where('negocios_id', $negocio->id)->first();
-        $this->assertNotNull($suscripcion);
-        $this->assertTrue($suscripcion->estado);
-        $this->assertNotNull($suscripcion->inicio);
-        $this->assertNotNull($suscripcion->fin);
-        $this->assertNotNull($suscripcion->ultimo_pago);
-        $this->assertNotNull($suscripcion->proxima_facturacion);
-    }
+        $suscripcion = Suscripcion::where('negocios_id', $negocio->id)->firstOrFail();
 
-    public function test_subscribe_fails_when_negocios_id_is_missing(): void
-    {
-        $user = User::factory()->create([
-            'negocios_id' => null,
-        ]);
-
-        $plan = Plan::create([
-            'nombre' => 'Plan Inicial',
-            'descripcion' => 'Primer mes gratis',
-            'precio' => '0',
-            'activo' => true,
-        ]);
-
-        $response = $this->actingAs($user)->post(route('negocios.suscribir'), [
-            'plan_id' => $plan->id,
-        ]);
-
-        $response->assertSessionHasErrors(['negocios_id']);
-        $this->assertDatabaseCount('suscripciones', 0);
-    }
-
-    public function test_subscribe_fails_when_plan_id_is_missing(): void
-    {
-        $user = User::factory()->create([
-            'negocios_id' => null,
-        ]);
-
-        $negocio = Negocio::create([
-            'nombre' => 'Reparaciones Express',
-        ]);
-
-        $response = $this->actingAs($user)->post(route('negocios.suscribir'), [
-            'negocios_id' => $negocio->id,
-        ]);
-
-        $response->assertSessionHasErrors(['plan_id']);
-        $this->assertDatabaseCount('suscripciones', 0);
-    }
-
-    public function test_subscribe_fails_with_invalid_negocio_id(): void
-    {
-        $user = User::factory()->create([
-            'negocios_id' => null,
-        ]);
-
-        $plan = Plan::create([
-            'nombre' => 'Plan Inicial',
-            'descripcion' => 'Primer mes gratis',
-            'precio' => '0',
-            'activo' => true,
-        ]);
-
-        $response = $this->actingAs($user)->post(route('negocios.suscribir'), [
-            'negocios_id' => 9999,
-            'plan_id' => $plan->id,
-        ]);
-
-        $response->assertSessionHasErrors(['negocios_id']);
-        $this->assertDatabaseCount('suscripciones', 0);
-    }
-
-    public function test_subscribe_fails_with_invalid_plan_id(): void
-    {
-        $user = User::factory()->create([
-            'negocios_id' => null,
-        ]);
-
-        $negocio = Negocio::create([
-            'nombre' => 'Reparaciones Express',
-        ]);
-
-        $response = $this->actingAs($user)->post(route('negocios.suscribir'), [
-            'negocios_id' => $negocio->id,
-            'plan_id' => 9999,
-        ]);
-
-        $response->assertSessionHasErrors(['plan_id']);
-        $this->assertDatabaseCount('suscripciones', 0);
+        $this->assertNull($suscripcion->plan_id);
+        $this->assertNull($suscripcion->ultimo_pago);
+        $this->assertSame(
+            now()->addDays((int) config('mercadopago.trial_days', 30))->toDateString(),
+            $suscripcion->fin->toDateString(),
+        );
     }
 }

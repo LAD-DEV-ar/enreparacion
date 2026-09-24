@@ -14,6 +14,10 @@ class Suscripcion extends Model
     protected $fillable = [
         'negocios_id',
         'plan_id',
+        'tipo',
+        'mp_preapproval_id',
+        'mp_status',
+        'metadatos',
         'estado',
         'inicio',
         'fin',
@@ -23,6 +27,7 @@ class Suscripcion extends Model
 
     protected $casts = [
         'estado' => 'boolean',
+        'metadatos' => 'array',
         'inicio' => 'datetime',
         'fin' => 'datetime',
         'ultimo_pago' => 'datetime',

@@ -22,6 +22,20 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
+        $suscripcion = $user->negocio?->suscripcion;
+        $diasPruebaRestantes = null;
+        $pruebaVencida = false;
+
+        if ($suscripcion && $suscripcion->tipo === 'trial' && $suscripcion->fin) {
+            $diasPrueba = (int) $suscripcion->fin->diffInDays(now());
+
+            if ($diasPrueba > 0) {
+                $diasPruebaRestantes = max(1, $diasPrueba);
+            } else {
+                $pruebaVencida = true;
+            }
+        }
+
         // Obtenemos las reparaciones del negocio con todas sus relaciones cargadas eficientemente (Eager Loading)
         $reparaciones = Reparacion::with([
             'dispositivo.cliente',
@@ -88,7 +102,9 @@ class DashboardController extends Controller
             'reparaciones',
             'reparacionesRecibidas',
             'reparacionesEnProceso',
-            'reparacionesListas'
+            'reparacionesListas',
+            'diasPruebaRestantes',
+            'pruebaVencida'
         ));
     }
 

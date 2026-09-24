@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use MercadoPago\MercadoPagoConfig;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +25,22 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureMercadoPago();
+    }
+
+    protected function configureMercadoPago(): void
+    {
+        $accessToken = config('mercadopago.access_token');
+
+        if (filled($accessToken)) {
+            MercadoPagoConfig::setAccessToken($accessToken);
+        }
+
+        MercadoPagoConfig::setRuntimeEnviroment(
+            config('mercadopago.environment') === 'test'
+                ? MercadoPagoConfig::LOCAL
+                : MercadoPagoConfig::SERVER,
+        );
     }
 
     /**

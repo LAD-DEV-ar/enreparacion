@@ -27,6 +27,7 @@ Route::middleware('without_suscription')->group(function () {
 Route::middleware('verified_email')->group(function () {
     Route::get('/planes', [PlanesController::class, 'index'])->name('planes.index')->middleware('auth');
     Route::post('/planes/suscribir', [PlanesController::class, 'store'])->name('planes.store')->middleware('auth');
+    Route::get('/planes/retorno', [PlanesController::class, 'retorno'])->name('planes.retorno')->middleware('auth');
     Route::get('/tu-negocio', [NegocioController::class, 'index'])->name('negocios')->middleware(['auth', 'have_negocios_id']);
 });
 
@@ -48,7 +49,6 @@ Route::get('/reset-password/{token}', [RecuperarController::class, 'index'])->na
 Route::post('/reset-password', [RecuperarController::class, 'store'])->name('password.store');
 
 Route::post('/tu-negocio', [NegocioController::class, 'store'])->name('negocios.store');
-Route::post('/tu-negocio/suscribir', [NegocioController::class, 'suscribir'])->name('negocios.suscribir')->middleware('auth');
 
 Route::get('/verificar-email', [VerificarEmailController::class, 'index'])->name('verificar-email.index')->middleware('auth');
 Route::post('/verificar-email', [VerificarEmailController::class, 'store'])->name('verificar-email.store');

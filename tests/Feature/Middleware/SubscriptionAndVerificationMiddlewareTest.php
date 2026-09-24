@@ -60,6 +60,42 @@ class SubscriptionAndVerificationMiddlewareTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_user_with_active_trial_can_pass_subscription_middleware(): void
+    {
+        $negocio = Negocio::factory()->create();
+        $user = User::factory()->conNegocio($negocio)->create();
+
+        Suscripcion::factory()->trial()->create(['negocios_id' => $negocio->id]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.index'));
+
+        $response->assertStatus(200);
+    }
+
+    public function test_user_with_pending_mercado_pago_subscription_is_redirected_to_planes(): void
+    {
+        $negocio = Negocio::factory()->create();
+        $user = User::factory()->conNegocio($negocio)->create();
+
+        Suscripcion::factory()->pendiente()->create(['negocios_id' => $negocio->id]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.index'));
+
+        $response->assertRedirect(route('planes.index'));
+    }
+
+    public function test_user_with_expired_trial_is_redirected_to_planes(): void
+    {
+        $negocio = Negocio::factory()->create();
+        $user = User::factory()->conNegocio($negocio)->create();
+
+        Suscripcion::factory()->trialVencida()->create(['negocios_id' => $negocio->id]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.index'));
+
+        $response->assertRedirect(route('planes.index'));
+    }
+
     public function test_unverified_email_user_is_redirected_to_verify_email(): void
     {
         $user = User::factory()->unverified()->create();
