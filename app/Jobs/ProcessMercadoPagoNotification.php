@@ -18,13 +18,25 @@ class ProcessMercadoPagoNotification implements ShouldQueue
 
     public function handle(SubscriptionService $subscriptions, PaymentClient $payments): void
     {
-        if ($this->topic === 'preapproval') {
+        $isPreapproval = in_array(
+            $this->topic,
+            ['preapproval', 'subscription_preapproval'],
+            true,
+        );
+
+        if ($isPreapproval) {
             $subscriptions->syncFromPreapproval($this->resource);
 
             return;
         }
 
-        if ($this->topic === 'authorized_payment' || $this->topic === 'payment') {
+        $isPayment = in_array(
+            $this->topic,
+            ['payment', 'authorized_payment', 'subscription_authorized_payment'],
+            true,
+        );
+
+        if ($isPayment) {
             try {
                 $payment = $payments->get((int) $this->resource);
             } catch (\Throwable $e) {

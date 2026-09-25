@@ -33,7 +33,7 @@ class SubscriptionService
                     'transaction_amount' => (float) $plan->precio,
                     'currency_id' => config('mercadopago.currency', 'ARS'),
                 ],
-                'back_url' => rtrim((string) config('app.url'), '/').route('planes.retorno', [], false),
+                'back_url' => $this->publicBaseUrl().route('planes.retorno', [], false),
                 'status' => 'pending',
             ]);
         } catch (MPApiException $e) {
@@ -61,6 +61,17 @@ class SubscriptionService
         return $suscripcion->fresh();
     }
 
+    private function publicBaseUrl(): string
+    {
+        $host = (string) request()->host();
+
+        if ($host !== 'localhost' && ! str_starts_with($host, '127.')) {
+            return rtrim((string) request()->root(), '/');
+        }
+
+        return rtrim((string) config('app.url'), '/');
+    }
+
     public function cancel(Suscripcion $suscripcion): void
     {
         if ($suscripcion->mp_preapproval_id) {
@@ -72,13 +83,18 @@ class SubscriptionService
         }
 
         $suscripcion->forceFill([
-            'estado' => false,
+            'estado' => true,
             'mp_status' => 'cancelled',
+            'proxima_facturacion' => null,
         ])->save();
     }
 
     public function changeCard(Suscripcion $suscripcion): string
     {
+        if ($suscripcion->mp_status !== 'authorized') {
+            throw new MercadoPagoException('La suscripción debe estar activa para actualizar el medio de pago.');
+        }
+
         if (! $suscripcion->mp_preapproval_id) {
             throw new MercadoPagoException('La suscripción no tiene una suscripción de Mercado Pago asociada.');
         }
@@ -123,6 +139,7 @@ class SubscriptionService
             'mp_status' => $preapproval->status,
             'fin' => $content['auto_recurring']['end_date'] ?? $content['next_payment_date'] ?? $suscripcion->fin,
             'proxima_facturacion' => $content['next_payment_date'] ?? $suscripcion->proxima_facturacion,
+            'ultimo_pago' => $content['summarized']['last_charged_date'] ?? $suscripcion->ultimo_pago,
             'metadatos' => $content,
         ])->save();
 

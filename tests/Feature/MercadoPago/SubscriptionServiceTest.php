@@ -8,6 +8,7 @@ use App\Models\Plan;
 use App\Models\Suscripcion;
 use App\Services\MercadoPago\SubscriptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use MercadoPago\Client\PreApproval\PreApprovalClient;
 use MercadoPago\Exceptions\MPApiException;
 use MercadoPago\Net\MPResponse;
@@ -102,5 +103,132 @@ class SubscriptionServiceTest extends TestCase
             negocio: $negocio,
             payerEmail: 'cliente@example.com',
         );
+    }
+
+    public function test_it_cancels_the_subscription_in_mercado_pago_and_keeps_access_until_the_end_of_the_period(): void
+    {
+        $http = new FakeMercadoPagoHttpClient;
+        $http->push(new MPResponse(200, ['id' => 'preapproval-999', 'status' => 'cancelled']));
+        $this->bindFakeHttp($http);
+
+        $suscripcion = Suscripcion::factory()->create([
+            'mp_preapproval_id' => 'preapproval-999',
+            'mp_status' => 'authorized',
+            'estado' => true,
+            'proxima_facturacion' => now()->addMonth(),
+        ]);
+
+        app(SubscriptionService::class)->cancel($suscripcion);
+
+        $this->assertCount(1, $http->requests);
+        $this->assertSame(
+            '{"status":"cancelled"}',
+            $http->requests[0]->getPayload(),
+        );
+
+        $this->assertDatabaseHas('suscripciones', [
+            'id' => $suscripcion->id,
+            'mp_status' => 'cancelled',
+            'estado' => true,
+            'proxima_facturacion' => null,
+        ]);
+    }
+
+    public function test_it_wraps_api_errors_when_cancelling(): void
+    {
+        $http = new FakeMercadoPagoHttpClient;
+        $http->push(new MPApiException('Bad Request', new MPResponse(400, ['message' => 'invalid subscription'])));
+        $this->bindFakeHttp($http);
+
+        $suscripcion = Suscripcion::factory()->create(['mp_preapproval_id' => 'preapproval-999']);
+
+        $this->expectException(MercadoPagoException::class);
+
+        app(SubscriptionService::class)->cancel($suscripcion);
+    }
+
+    public function test_change_card_returns_the_init_point_from_mercado_pago(): void
+    {
+        $http = new FakeMercadoPagoHttpClient;
+        $http->push(new MPResponse(200, [
+            'id' => 'preapproval-999',
+            'status' => 'authorized',
+            'init_point' => 'https://www.mercadopago.com.ar/subscriptions/change_card?preapproval_id=preapproval-999',
+        ]));
+        $this->bindFakeHttp($http);
+
+        $suscripcion = Suscripcion::factory()->create([
+            'mp_preapproval_id' => 'preapproval-999',
+            'mp_status' => 'authorized',
+        ]);
+
+        $initPoint = app(SubscriptionService::class)->changeCard($suscripcion);
+
+        $this->assertSame(
+            'https://www.mercadopago.com.ar/subscriptions/change_card?preapproval_id=preapproval-999',
+            $initPoint,
+        );
+    }
+
+    public function test_change_card_requires_an_active_subscription(): void
+    {
+        $http = new FakeMercadoPagoHttpClient;
+        $this->bindFakeHttp($http);
+
+        $suscripcion = Suscripcion::factory()->pendiente()->create(['mp_preapproval_id' => 'preapproval-999']);
+
+        $this->expectException(MercadoPagoException::class);
+
+        app(SubscriptionService::class)->changeCard($suscripcion);
+
+        $this->assertCount(0, $http->requests);
+    }
+
+    public function test_it_uses_the_request_host_for_the_back_url_when_it_is_a_public_url(): void
+    {
+        $http = new FakeMercadoPagoHttpClient;
+        $this->fakePendingResponse($http);
+        $this->bindFakeHttp($http);
+
+        $request = Request::create('https://app.trycloudflare.com/planes', 'POST', server: ['HTTP_HOST' => 'app.trycloudflare.com']);
+        $this->app->instance('request', $request);
+
+        $plan = Plan::factory()->create();
+        $negocio = Negocio::factory()->create();
+
+        app(SubscriptionService::class)->createPendingPreapproval(
+            plan: $plan,
+            negocio: $negocio,
+            payerEmail: 'cliente@example.com',
+        );
+
+        $payload = json_decode($http->requests[0]->getPayload(), true);
+
+        $this->assertSame('https://app.trycloudflare.com/planes/retorno', $payload['back_url']);
+    }
+
+    public function test_it_falls_back_to_app_url_for_the_back_url_when_the_host_is_local(): void
+    {
+        config(['app.url' => 'https://app.trycloudflare.com']);
+
+        $http = new FakeMercadoPagoHttpClient;
+        $this->fakePendingResponse($http);
+        $this->bindFakeHttp($http);
+
+        $request = Request::create('http://localhost/planes', 'POST', server: ['HTTP_HOST' => 'localhost']);
+        $this->app->instance('request', $request);
+
+        $plan = Plan::factory()->create();
+        $negocio = Negocio::factory()->create();
+
+        app(SubscriptionService::class)->createPendingPreapproval(
+            plan: $plan,
+            negocio: $negocio,
+            payerEmail: 'cliente@example.com',
+        );
+
+        $payload = json_decode($http->requests[0]->getPayload(), true);
+
+        $this->assertSame('https://app.trycloudflare.com/planes/retorno', $payload['back_url']);
     }
 }

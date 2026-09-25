@@ -96,6 +96,36 @@ class SubscriptionAndVerificationMiddlewareTest extends TestCase
         $response->assertRedirect(route('planes.index'));
     }
 
+    public function test_user_with_cancelled_subscription_keeps_access_until_the_end_of_the_paid_period(): void
+    {
+        $negocio = Negocio::factory()->create();
+        $user = User::factory()->conNegocio($negocio)->create();
+
+        Suscripcion::factory()->cancelada()->create([
+            'negocios_id' => $negocio->id,
+            'fin' => now()->addDays(10),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.index'));
+
+        $response->assertStatus(200);
+    }
+
+    public function test_user_with_cancelled_subscription_after_the_paid_period_is_redirected_to_planes(): void
+    {
+        $negocio = Negocio::factory()->create();
+        $user = User::factory()->conNegocio($negocio)->create();
+
+        Suscripcion::factory()->cancelada()->create([
+            'negocios_id' => $negocio->id,
+            'fin' => now()->subDay(),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard.index'));
+
+        $response->assertRedirect(route('planes.index'));
+    }
+
     public function test_unverified_email_user_is_redirected_to_verify_email(): void
     {
         $user = User::factory()->unverified()->create();

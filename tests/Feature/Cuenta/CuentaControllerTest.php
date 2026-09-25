@@ -52,7 +52,7 @@ class CuentaControllerTest extends TestCase
         $response = $this->actingAs($user)->get(route('cuenta.index'));
 
         $response->assertStatus(200);
-        $response->assertViewIs('home.cuenta');
+        $response->assertViewIs('home.cuenta.configuracion');
         $response->assertViewHas('user');
         $response->assertSee('Martín Palermo');
         $response->assertSee('Electro Taller');

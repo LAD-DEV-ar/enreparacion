@@ -108,4 +108,54 @@ class PlanesController extends Controller
         return redirect()->route('planes.index')
             ->with('error', 'No pudimos confirmar el pago. Si ya pagaste, aguardá unos minutos e intentá nuevamente.');
     }
+
+    public function cancelar(Request $request, SubscriptionService $subscriptionService)
+    {
+        $suscripcion = $request->user()->negocio?->suscripcion;
+
+        if (
+            ! $suscripcion
+            || $suscripcion->tipo !== 'mercadopago'
+            || in_array($suscripcion->mp_status, ['pending', 'cancelled'], true)
+        ) {
+            return back()->with('info', 'No hay una suscripción activa para cancelar.');
+        }
+
+        try {
+            $subscriptionService->cancel($suscripcion);
+        } catch (MercadoPagoException $e) {
+            Log::error('Mercado Pago: fallo al cancelar suscripción', [
+                'message' => $e->getMessage(),
+                'status' => $e->getStatusCode(),
+                'response' => $e->getResponse()?->getContent(),
+            ]);
+
+            return back()->with('error', 'No pudimos cancelar la suscripción. Intentá nuevamente en unos minutos.');
+        }
+
+        return back()->with('success', 'Tu suscripción fue cancelada. Vas a mantener el acceso hasta el final del período ya pagado.');
+    }
+
+    public function cambiarTarjeta(Request $request, SubscriptionService $subscriptionService)
+    {
+        $suscripcion = $request->user()->negocio?->suscripcion;
+
+        if (! $suscripcion || $suscripcion->mp_status !== 'authorized') {
+            return back()->with('error', 'Tu suscripción no está activa. Para reactivarla, visitá tus planes.');
+        }
+
+        try {
+            $initPoint = $subscriptionService->changeCard($suscripcion);
+        } catch (MercadoPagoException $e) {
+            Log::error('Mercado Pago: fallo al actualizar medio de pago', [
+                'message' => $e->getMessage(),
+                'status' => $e->getStatusCode(),
+                'response' => $e->getResponse()?->getContent(),
+            ]);
+
+            return back()->with('error', 'No pudimos iniciar el cambio de tarjeta. Intentá nuevamente en unos minutos.');
+        }
+
+        return redirect()->away($initPoint);
+    }
 }

@@ -68,6 +68,16 @@ class SuscripcionFactory extends Factory
         ]);
     }
 
+    public function cancelada(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'tipo' => 'mercadopago',
+            'mp_status' => 'cancelled',
+            'estado' => true,
+            'proxima_facturacion' => null,
+        ]);
+    }
+
     public function pendiente(): static
     {
         return $this->state(fn (array $attributes): array => [

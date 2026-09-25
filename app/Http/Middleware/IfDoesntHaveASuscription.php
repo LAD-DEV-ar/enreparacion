@@ -39,6 +39,10 @@ class IfDoesntHaveASuscription
                 && $suscripcion->fin->isFuture();
         }
 
+        if ($suscripcion->mp_status === 'cancelled') {
+            return (bool) $suscripcion->fin?->isFuture();
+        }
+
         return (bool) $suscripcion->estado
             && $suscripcion->mp_status === 'authorized';
     }

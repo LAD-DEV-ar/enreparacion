@@ -157,4 +157,81 @@ class PlanesControllerTest extends TestCase
 
         $response->assertRedirect(route('planes.index'));
     }
+
+    public function test_user_can_cancel_an_active_subscription(): void
+    {
+        $negocio = Negocio::factory()->conSuscripcion()->create();
+        $user = User::factory()->conNegocio($negocio)->create();
+
+        $this->mock(SubscriptionService::class, function ($mock): void {
+            $mock->shouldReceive('cancel')->once();
+        });
+
+        $response = $this->actingAs($user)->from(route('cuenta.index'))->post(route('planes.cancelar'));
+
+        $response->assertRedirect(route('cuenta.index'));
+        $response->assertSessionHas('success');
+    }
+
+    public function test_user_cannot_cancel_an_inactive_or_cancelled_subscription(): void
+    {
+        $negocio = Negocio::factory()->create();
+        $user = User::factory()->conNegocio($negocio)->create();
+        Suscripcion::factory()->cancelada()->create(['negocios_id' => $negocio->id]);
+
+        $this->mock(SubscriptionService::class, function ($mock): void {
+            $mock->shouldReceive('cancel')->never();
+        });
+
+        $response = $this->actingAs($user)->from(route('cuenta.index'))->post(route('planes.cancelar'));
+
+        $response->assertRedirect(route('cuenta.index'));
+        $response->assertSessionHas('info');
+    }
+
+    public function test_cancelation_requires_an_active_subscription(): void
+    {
+        $user = User::factory()->create(['negocios_id' => null]);
+
+        $this->mock(SubscriptionService::class, function ($mock): void {
+            $mock->shouldReceive('cancel')->never();
+        });
+
+        $response = $this->actingAs($user)->from(route('cuenta.index'))->post(route('planes.cancelar'));
+
+        $response->assertRedirect(route('cuenta.index'));
+        $response->assertSessionHas('info');
+    }
+
+    public function test_change_card_redirects_to_mercado_pago(): void
+    {
+        $negocio = Negocio::factory()->conSuscripcion()->create();
+        $user = User::factory()->conNegocio($negocio)->create();
+
+        $initPoint = 'https://www.mercadopago.com.ar/subscriptions/change_card?preapproval_id=preapproval-999';
+
+        $this->mock(SubscriptionService::class, function ($mock) use ($initPoint): void {
+            $mock->shouldReceive('changeCard')->once()->andReturn($initPoint);
+        });
+
+        $response = $this->actingAs($user)->get(route('planes.tarjeta'));
+
+        $response->assertRedirect($initPoint);
+    }
+
+    public function test_change_card_requires_an_active_subscription(): void
+    {
+        $negocio = Negocio::factory()->create();
+        $user = User::factory()->conNegocio($negocio)->create();
+        Suscripcion::factory()->cancelada()->create(['negocios_id' => $negocio->id]);
+
+        $this->mock(SubscriptionService::class, function ($mock): void {
+            $mock->shouldReceive('changeCard')->never();
+        });
+
+        $response = $this->actingAs($user)->from(route('cuenta.index'))->get(route('planes.tarjeta'));
+
+        $response->assertRedirect(route('cuenta.index'));
+        $response->assertSessionHas('error');
+    }
 }

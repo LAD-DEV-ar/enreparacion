@@ -12,9 +12,9 @@ class CuentaController extends Controller
 {
     public function index()
     {
-        $user = Auth::user()->load('negocio');
+        $user = Auth::user()->load(['negocio.suscripcion.plan']);
 
-        return view('home.cuenta', compact('user'));
+        return view('home.cuenta.configuracion', compact('user'));
     }
 
     public function updatePerfil(Request $request)
