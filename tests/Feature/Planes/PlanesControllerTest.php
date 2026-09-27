@@ -214,7 +214,7 @@ class PlanesControllerTest extends TestCase
             $mock->shouldReceive('changeCard')->once()->andReturn($initPoint);
         });
 
-        $response = $this->actingAs($user)->get(route('planes.tarjeta'));
+        $response = $this->actingAs($user)->post(route('planes.tarjeta'));
 
         $response->assertRedirect($initPoint);
     }
@@ -229,7 +229,7 @@ class PlanesControllerTest extends TestCase
             $mock->shouldReceive('changeCard')->never();
         });
 
-        $response = $this->actingAs($user)->from(route('cuenta.index'))->get(route('planes.tarjeta'));
+        $response = $this->actingAs($user)->from(route('cuenta.index'))->post(route('planes.tarjeta'));
 
         $response->assertRedirect(route('cuenta.index'));
         $response->assertSessionHas('error');

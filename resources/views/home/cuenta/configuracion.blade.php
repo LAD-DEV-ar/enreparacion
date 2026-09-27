@@ -8,14 +8,15 @@
             showNewPassword: false,
             showConfirmPassword: false,
             openCancelModal: false,
-            tab: 'cuenta',
+            openConfirmModal: false,
+            tab: 'negocio',
         }"
     >
         @include('components.sidebar')
         {{-- =========================================
             HEADER
         ========================================== --}}
-        <div class="flex justify-between items-center px-12 pt-10 pb-2">
+        <div class="flex sm:justify-between sm:flex-row flex-col sm:items-center px-12 pt-10 pb-2">
             <div class="mb-6">
                 <h1 class="text-3xl font-bold text-text-primary">Mi cuenta</h1>
                 <p class="mt-1 text-sm text-text-secondary">Gestioná tu información personal y la de tu negocio.</p>

@@ -31,7 +31,7 @@ class NegocioSeeder extends Seeder
     public function run(): void
     {
 
-        $adminFijo = User::firstWhere('email', 'admin@test.com');
+        $adminFijo = User::firstWhere('email', 'test_user_2887582496948464712@testuser.com');
 
         if (! $adminFijo) {
 
@@ -46,7 +46,7 @@ class NegocioSeeder extends Seeder
                 ->conNegocio($negocioPrincipal)
                 ->create([
                     'name' => 'Admin Principal',
-                    'email' => 'admin@test.com',
+                    'email' => 'test_user_2887582496948464712@testuser.com',
                     'password' => bcrypt('password'),
                 ]);
             $this->command->info("✔  Negocio principal: {$negocioPrincipal->nombre} (ID {$negocioPrincipal->id})");

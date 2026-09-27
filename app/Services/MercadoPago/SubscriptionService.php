@@ -137,7 +137,7 @@ class SubscriptionService
         $suscripcion->forceFill([
             'estado' => $preapproval->status === 'authorized',
             'mp_status' => $preapproval->status,
-            'fin' => $content['auto_recurring']['end_date'] ?? $content['next_payment_date'] ?? $suscripcion->fin,
+            'fin' => $content['next_payment_date'] ?? $suscripcion->fin,
             'proxima_facturacion' => $content['next_payment_date'] ?? $suscripcion->proxima_facturacion,
             'ultimo_pago' => $content['summarized']['last_charged_date'] ?? $suscripcion->ultimo_pago,
             'metadatos' => $content,

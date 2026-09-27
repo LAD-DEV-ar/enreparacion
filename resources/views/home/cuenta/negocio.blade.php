@@ -108,12 +108,13 @@
 
                 @else
 
-                    <a
-                        href="{{ route('planes.tarjeta') }}"
+                    <button
+                        type="button"
+                        @click="openConfirmModal = true"
                         class="inline-flex h-11 items-center rounded-xl bg-primary px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 cursor-pointer"
                     >
                         Actualizar medio de pago
-                    </a>
+                    </button>
 
                     <button
                         type="button"
@@ -137,35 +138,20 @@
     {{-- =========================================
         MODAL: Confirmar cancelación
     ========================================== --}}
-    <div
-        x-show="openCancelModal"
-        x-cloak
-        x-transition.opacity
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-        @keydown.escape.window="openCancelModal = false"
-        @click.self="openCancelModal = false"
-    >
-        <div class="w-full max-w-md rounded-2xl bg-surface-hover p-8">
-            <h3 class="text-lg font-bold text-text-primary">¿Cancelar tu suscripción?</h3>
-            <p class="mt-2 text-sm text-text-secondary">
-                No se te va a volver a cobrar. Vas a mantener el acceso hasta el {{ $suscripcion->fin?->format('d/m/Y') }}.
-            </p>
-            <form method="POST" action="{{ route('planes.cancelar') }}" class="mt-6 flex flex-wrap gap-3">
-                @csrf
-                <button
-                    type="button"
-                    @click="openCancelModal = false"
-                    class="h-11 rounded-xl bg-surface px-6 text-sm font-semibold text-text-primary transition-opacity hover:opacity-90 cursor-pointer"
-                >
-                    Mantener suscripción
-                </button>
-                <button
-                    type="submit"
-                    class="h-11 rounded-xl bg-danger px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 cursor-pointer"
-                >
-                    Sí, cancelar
-                </button>
-            </form>
-        </div>
-    </div>
+    <x-modal-confirmacion
+        tit="Cambiar mi medio de pago"
+        des="¿Seguro que quieres cambiar tu medio de pago?, lo vas a podrar gestionar totalmente por medio de Mercado Pago"
+        botcancel="Cancelar"
+        botconfirm="Cambiar medio de pago"
+        accion="{{ route('planes.tarjeta') }}"
+    />
+    <x-modal-confirmacion
+        nombre="Cancel"
+        tit="Cancelar mi suscripcion" 
+        des="No se te va a volver a cobrar. Vas a mantener el acceso hasta el {{ $suscripcion->fin?->format('d/m/Y') }}" 
+        botcancel="Mantener suscripción" 
+        botconfirm="Sí, cancelar"
+        colorbotconfirm="bg-danger"
+        accion="{{ route('planes.cancelar') }}"
+    />
 </div>
