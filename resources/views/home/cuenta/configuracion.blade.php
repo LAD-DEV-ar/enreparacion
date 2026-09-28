@@ -9,7 +9,7 @@
             showConfirmPassword: false,
             openCancelModal: false,
             openConfirmModal: false,
-            tab: 'negocio',
+            tab: 'cuenta',
         }"
     >
         @include('components.sidebar')

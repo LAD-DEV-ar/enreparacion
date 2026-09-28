@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Planes;
 use App\Exceptions\MercadoPagoException;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Models\Suscripcion;
 use App\Services\MercadoPago\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -35,6 +36,12 @@ class PlanesController extends Controller
             ], 403);
         }
 
+        $suscripcion = $negocio->suscripcion;
+
+        if ($suscripcion?->estado === true && $suscripcion?->mp_status === "authorized") {
+            return redirect()->route('dashboard.index')->with('success', 'Ya tienes esta suscripción activa dentro de tu cuenta.');
+        }
+        
         $plan = Plan::findOrFail((int) $validated['plan']);
 
         try {
@@ -85,6 +92,7 @@ class PlanesController extends Controller
         if (! $negocio) {
             return redirect()->route('negocios');
         }
+        
 
         $preapprovalId = $request->query('preapproval_id');
 

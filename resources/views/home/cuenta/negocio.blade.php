@@ -108,21 +108,27 @@
 
                 @else
 
-                    <button
-                        type="button"
-                        @click="openConfirmModal = true"
-                        class="inline-flex h-11 items-center rounded-xl bg-primary px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 cursor-pointer"
-                    >
-                        Actualizar medio de pago
-                    </button>
+                    <form id="form-actualizar-metodo" action="{{ route('planes.tarjeta') }}" method="post">
+                        @csrf
+                        <button
+                            type="button"
+                            @click="openConfirmModal = true"
+                            class="inline-flex h-11 items-center rounded-xl bg-primary px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 cursor-pointer"
+                        >
+                            Actualizar medio de pago
+                        </button>
+                    </form>
 
-                    <button
-                        type="button"
-                        @click="openCancelModal = true"
-                        class="inline-flex h-11 items-center rounded-xl bg-danger/10 px-6 text-sm font-semibold text-danger transition-opacity hover:opacity-90 cursor-pointer"
-                    >
-                        Cancelar suscripción
-                    </button>
+                    <form id="form-cancelar-suscripcion" action="{{ route('planes.cancelar') }}" method="post">
+                        @csrf
+                        <button
+                            type="button"
+                            @click="openCancelModal = true"
+                            class="inline-flex h-11 items-center rounded-xl bg-danger/10 px-6 text-sm font-semibold text-danger transition-opacity hover:opacity-90 cursor-pointer"
+                        >
+                            Cancelar suscripción
+                        </button>
+                    </form>
 
                 @endif
             </div>
@@ -139,19 +145,19 @@
         MODAL: Confirmar cancelación
     ========================================== --}}
     <x-modal-confirmacion
+        form="form-actualizar-metodo"
         tit="Cambiar mi medio de pago"
         des="¿Seguro que quieres cambiar tu medio de pago?, lo vas a podrar gestionar totalmente por medio de Mercado Pago"
         botcancel="Cancelar"
         botconfirm="Cambiar medio de pago"
-        accion="{{ route('planes.tarjeta') }}"
     />
     <x-modal-confirmacion
+        form="form-cancelar-suscripcion"
         nombre="Cancel"
         tit="Cancelar mi suscripcion" 
         des="No se te va a volver a cobrar. Vas a mantener el acceso hasta el {{ $suscripcion->fin?->format('d/m/Y') }}" 
         botcancel="Mantener suscripción" 
         botconfirm="Sí, cancelar"
         colorbotconfirm="bg-danger"
-        accion="{{ route('planes.cancelar') }}"
     />
 </div>

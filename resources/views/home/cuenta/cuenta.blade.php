@@ -20,7 +20,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('cuenta.update-perfil') }}" class="space-y-5">
+            <form id="form-perfil" method="POST" action="{{ route('cuenta.update-perfil') }}" class="space-y-5">
                 @csrf
                 @method('PATCH')
 
@@ -84,7 +84,8 @@
 
                 <div class="pt-1">
                     <button
-                        type="submit"
+                        type="button"
+                        @click="openConfirmModal = true"
                         class="h-11 rounded-xl bg-primary px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 cursor-pointer"
                     >
                         Guardar cambios
@@ -317,4 +318,11 @@
 
         </form>
     </div>{{-- /card seguridad --}}
+    <x-modal-confirmacion
+        form="form-perfil"
+        tit="¿Guardar cambios?"
+        des="Se actualizarán tus datos personales."
+        botcancel="Cancelar"
+        botconfirm="Guardar cambios"
+    />
 </div>

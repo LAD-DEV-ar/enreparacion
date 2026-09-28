@@ -70,7 +70,7 @@ class PlanesControllerTest extends TestCase
                 ->once()
                 ->andReturn(new Suscripcion(['metadatos' => ['init_point' => $initPoint]]));
         });
-
+        
         $response = $this->actingAs($user)->post(route('planes.store'), [
             'plan' => $plan->id,
         ]);
