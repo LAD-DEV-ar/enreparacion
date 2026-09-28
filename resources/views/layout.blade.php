@@ -7,7 +7,7 @@
             name="description"
             content="Gestioná reparaciones, clientes y estados de trabajos desde un solo lugar. EnReparacion es un sistema de gestión para servicios técnicos en Argentina."
         >
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'Laravel') }} - Gestión de servicios técnicos</title>
 
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">

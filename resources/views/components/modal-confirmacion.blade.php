@@ -15,6 +15,14 @@
 
 <div
     x-show="open{{ $nombre ?? 'Confirm' }}Modal"
+    x-data="{
+        loader: false,
+
+        confirmData(){
+            this.loader = true;
+            return document.getElementById('{{ $form ?? '' }}').submit();
+        }
+    }"
     x-cloak
     x-transition.opacity
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
@@ -43,14 +51,13 @@
 
             <button
                 type="button"
-                @click="
-                    document.getElementById('{{ $form ?? '' }}').submit()
-                "
-                class="h-11 rounded-xl {{ $colorbotconfirm ?? 'bg-primary' }} px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 cursor-pointer"
+                @click="confirmData()"
+                :class="loader ? 'bg-white/20 text-white/30 cursor-not-allowed' : '{{ $colorbotconfirm ?? 'bg-primary' }} text-white cursor-pointer'"
+                class="h-11 rounded-xl px-6 text-sm font-semibold transition-opacity hover:opacity-90"
             >
-                {{ $botconfirm ?? 'Ok' }}
+                <span x-show="!loader">{{ $botconfirm ?? 'Ok' }}</span>
+                <div x-show="loader" class="w-8 h-8 rounded-full border-4 border-gray-600 border-t-blue-600 animate-spin"></div>
             </button>
-
         </div>
     </div>
 </div>
