@@ -40,8 +40,21 @@ class NegocioFactory extends Factory
         return $this->afterCreating(function (Negocio $negocio) use ($plan, $activa) {
             Suscripcion::factory()->create([
                 'negocios_id' => $negocio->id,
-                'plan_id' => $plan?->id ?? Plan::factory(),
+                'plan_id' => $plan?->id ?? Plan::first()?->id ?? Plan::factory(),
                 'estado' => $activa,
+            ]);
+        });
+    }
+
+    /**
+     * Asocia una suscripción en período de prueba (trial) al negocio.
+     */
+    public function conSuscripcionTrial(?Plan $plan = null): static
+    {
+        return $this->afterCreating(function (Negocio $negocio) use ($plan) {
+            Suscripcion::factory()->trial()->create([
+                'negocios_id' => $negocio->id,
+                'plan_id' => $plan?->id ?? Plan::first()?->id ?? Plan::factory(),
             ]);
         });
     }
