@@ -146,7 +146,7 @@
                                 placeholder="Detalle del problema reportado por el cliente"
                                 required
                                 class="w-full rounded-xl bg-[#1c2530] p-3 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner resize-none"
-                            >{{ old('falla_reportada') }}</textarea>
+                            >{{ old('falla_reporta/**/da') }}</textarea>
                             @error('falla_reportada')
                                 <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
                             @enderror
@@ -201,7 +201,7 @@
                             <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">
                                 Clave de Acceso / PIN / Patrón:
                             </label>
-                            
+
                             {{-- Input hidden para persistir el valor de la clave en el formulario --}}
                             <input type="hidden" name="clave_de_acceso" :value="claveAccesoValor">
 
