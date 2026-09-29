@@ -1,11 +1,11 @@
 @extends('layout')
 
 @section('main')
-    <main class="flex flex-col items-center justify-center px-4 py-10">
-        <h2 class="text-4xl p-6 text-text-primary mt-6 text-center">Suscribite para seguir usando el sistema</h2>
+    <main class="flex flex-col items-center justify-center px-4 py-6">
+        <h2 class="text-4xl p-6 text-text-primary mt-1 text-center">Suscribite para seguir usando el sistema</h2>
 
         @empty($planes)
-            <div class="m-2 rounded-3xl border border-white/10 bg-white/5 p-6 md:p-10 backdrop-blur-md shadow-2xl text-[#F5F7FA]">
+            <div class="m-2 rounded-3xl border border-white/10 bg-white/5 p-6 md:p-10 backdrop-blur-md shadow-2xl text-text-primary">
                 <h2 class="text-4xl font-bold text-center mb-4 text-text-primary">No hay planes</h2>
                 <p class="text-text-secondary">Actualmente no hay planes disponibles en la plataforma, espera a que un técnico se encargue de arreglar este problema.</p>
             </div>
@@ -21,9 +21,8 @@
 
                 {{-- Precio --}}
                 <div class="mt-8 flex items-center justify-center gap-5">
-                    <div class="flex items-start">
-                        <span class="mt-1 text-5xl font-medium leading-none">$</span>
-                        <span class="text-8xl font-medium leading-[0.8] tracking-tight">{{ number_format((float) $plan->precio, 0, ',', '.') }}</span>
+                    <div class="flex items-start pb-2">
+                        <span class="text-6xl font-medium leading-[0.8] tracking-tight">${{ number_format((float) $plan->precio, 0, ',', '.') }}</span>
                     </div>
                     <div class="flex flex-col">
                         <span class="text-base leading-none">Por mes</span>
