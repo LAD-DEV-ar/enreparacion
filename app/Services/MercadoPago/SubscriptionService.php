@@ -3,6 +3,7 @@
 namespace App\Services\MercadoPago;
 
 use App\Exceptions\MercadoPagoException;
+use App\Mail\PagoExitoso;
 use App\Models\Negocio;
 use App\Models\Plan;
 use App\Models\Suscripcion;
@@ -165,6 +166,10 @@ class SubscriptionService
             'ultimo_pago' => $payment['date_approved'] ?? Carbon::now(),
             'proxima_facturacion' => $payment['next_payment_date'] ?? $suscripcion->proxima_facturacion,
         ])->save();
+
+        $email = $suscripcion->negocio->usuarios()->first()->email;
+
+        \Mail::to($email)->queue(new PagoExitoso());
 
         return $suscripcion;
     }
