@@ -167,9 +167,9 @@ class SubscriptionService
             'proxima_facturacion' => $payment['next_payment_date'] ?? $suscripcion->proxima_facturacion,
         ])->save();
 
-        $email = $suscripcion->negocio->usuarios()->first()->email;
+        $email = $suscripcion->negocio->usuarios()->first()?->email;
 
-        \Mail::to($email)->queue(new PagoExitoso());
+        if ($email) \Mail::to($email)->queue(new PagoExitoso());
 
         return $suscripcion;
     }
