@@ -16,6 +16,7 @@ class PlanSeeder extends Seeder
             'precio' => '22999',
             'activo' => true,
         ]);
+
         $this->command->info('✔    Ya se inserto los datos del plan inicial');
     }
 }

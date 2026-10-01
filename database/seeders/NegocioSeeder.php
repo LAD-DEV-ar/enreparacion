@@ -30,7 +30,8 @@ class NegocioSeeder extends Seeder
 
     public function run(): void
     {
-
+        // Creamos e insertamos plan de suscripcion por medio del seeder existente
+        $this->call([PlanSeeder::class]);
         $adminFijo = User::firstWhere('email', 'test_user_2887582496948464712@testuser.com');
 
         if (! $adminFijo) {
