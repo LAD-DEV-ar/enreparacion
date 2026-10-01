@@ -28,7 +28,7 @@ class PagoExitoso extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Pago Exitoso',
+            subject: 'Tu pago fue exitoso. Ya puedes comenzar a usar EnReparacion.',
         );
     }
 

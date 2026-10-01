@@ -57,7 +57,7 @@ class NotificacionService
 
         try {
             // Envío del correo con Mailable
-            Mail::to($email)->send(new EstadoReparacionActualizado(
+            Mail::to($email)->queue(new EstadoReparacionActualizado(
                 reparacion: $reparacion,
                 nuevoEstado: $nuevoEstado,
                 asunto: $asuntoFinal,
