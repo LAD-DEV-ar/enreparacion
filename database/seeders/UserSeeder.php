@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $negocioPrincipal = Negocio::factory()->create([
+        $negocioPrincipal = Negocio::factory()->conSuscripcion()->create([
             'nombre' => 'Mi Taller de Prueba',
             'direccion' => 'Av. Siempre Viva 742',
             'telefono' => '0351-4123456',
@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
             'password' => bcrypt('password'),
         ]);
 
-        $this->command->info("✔  Negocio principal: {$negocioPrincipal->nombre} (ID {$negocioPrincipal->id})");
+        $this->command->info("✔  Negocio principal: {$negocioPrincipal->nombre} (ID {$negocioPrincipal->id}) y con suscripcion trial/prueba");
         $this->command->info("✔  Admin fijo: {$adminFijo->email} / contraseña: password");
     }
 }
