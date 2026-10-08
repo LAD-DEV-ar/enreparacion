@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Negocio;
+use App\Models\Suscripcion;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -13,19 +14,35 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $negocioPrincipal = Negocio::factory()->conSuscripcion()->create([
-            'nombre' => 'Mi Taller de Prueba',
-            'direccion' => 'Av. Siempre Viva 742',
-            'telefono' => '0351-4123456',
-        ]);
+        // Comprobamos si el usuario de prueba ya existe.
+        $usuarioPrincipal = User::firstWhere('email', 'test_user_2887582496948464712@testuser.com');
 
-        $adminFijo = User::factory()->administrador()->conNegocio($negocioPrincipal)->create([
-            'name' => 'Admin Principal',
-            'email' => 'test_user_2887582496948464712@testuser.com',
-            'password' => bcrypt('password'),
-        ]);
+        // Si no existe, lo creamos.
+        if (!$usuarioPrincipal){
 
-        $this->command->info("✔  Negocio principal: {$negocioPrincipal->nombre} (ID {$negocioPrincipal->id}) y con suscripcion trial/prueba");
-        $this->command->info("✔  Admin fijo: {$adminFijo->email} / contraseña: password");
+            $negocioPrincipal = Negocio::factory()->conSuscripcion()->create([
+                'nombre' => 'Mi Taller de Prueba',
+                'direccion' => 'Av. Siempre Viva 742',
+                'telefono' => '0351-4123456',
+            ]);
+
+            $adminFijo = User::factory()->administrador()->conNegocio($negocioPrincipal)->create([
+                'name' => 'Admin Principal',
+                'email' => 'test_user_2887582496948464712@testuser.com',
+                'password' => bcrypt('password'),
+            ]);
+
+            // Dejamos en consola que el codigo de este if se ejecuto correctamente.
+            $this->command->info("✔  Negocio principal: {$negocioPrincipal->nombre} (ID {$negocioPrincipal->id}) y con suscripcion trial/prueba");
+            $this->command->info("✔  Admin fijo: {$adminFijo->email} / contraseña: password");
+        }
+        $negocio = $usuarioPrincipal->negocio;
+        $suscripcion = Suscripcion::where('id', $negocio->id)->first();
+        $suscripcion->update([
+            'tipo' => 'mercadopago',
+            'mp_status' => 'authorized',
+        ]);
+        $this->command->info("✔  El usuario: {$usuarioPrincipal->email} dejo de estar con una suscripcion trial y paso a tener una tipo mercadopago");
+        
     }
 }

@@ -14,6 +14,11 @@ class UserTrialSeeder extends Seeder
      */
     public function run(): void
     {
+        $usuarioPrincipal = User::firstWhere('email', 'test_user_2887582496948464712@testuser.com');
+        if($usuarioPrincipal){
+            $this->command->info("Ya existia este usuario registrado/creado en la DB");
+            return;
+        }
         $negocioPrincipal = Negocio::factory()->conSuscripcionTrial()->create([
             'nombre' => 'Mi Taller de Prueba',
             'direccion' => 'Av. Siempre Viva 742',
