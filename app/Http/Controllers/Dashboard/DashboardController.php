@@ -157,9 +157,9 @@ class DashboardController extends Controller
             $codigo_seguimiento = $this->generarCodigoSeguimiento($validated['nombre']);
 
             Reparacion::create([
-                'negocios_id' => $user->negocios_id, // Solo prueba
-                'dispositivos_id' => $dispositivo->id, // Solo prueba
-                'users_id' => $user->id, // Solo prueba
+                'negocios_id' => $user->negocios_id,
+                'dispositivos_id' => $dispositivo->id,
+                'users_id' => $user->id,
                 'falla_reportada' => $validated['falla_reportada'],
                 'clave_de_acceso' => $validated['clave_de_acceso'],
                 // 'estado' => $validated['estado'],

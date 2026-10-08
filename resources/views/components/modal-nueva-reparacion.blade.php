@@ -17,6 +17,162 @@
     class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
     role="dialog"
     aria-modal="true"
+    x-data="{
+        newClient: false,
+        searchClient: true,
+        returnSearch: false,
+
+        search: '',
+        showResult: false,
+
+        clientes: [
+            {
+                nombre: 'Elias',
+                telefono: '115437832',
+                reparaciones: 2,
+                email: 'test@test.com'
+            },
+            {
+                nombre: 'Eliana',
+                telefono: '113246612',
+                reparaciones: 3,
+                email: 'test23@test21.com'
+            },
+            {
+                nombre: 'Carlos',
+                telefono: '116784523',
+                reparaciones: 4,
+                email: 'carlos@test.com'
+            },
+            {
+                nombre: 'Facundo',
+                telefono: '114563782',
+                reparaciones: 1,
+                email: 'facundo@test.com'
+            },
+            {
+                nombre: 'Marcos',
+                telefono: '112345678',
+                reparaciones: 6,
+                email: 'marcos@test.com'
+            },
+            {
+                nombre: 'Luciana',
+                telefono: '116543219',
+                reparaciones: 2,
+                email: 'luciana@test.com'
+            },
+            {
+                nombre: 'Santiago',
+                telefono: '113456789',
+                reparaciones: 3,
+                email: 'santiago@test.com'
+            },
+            {
+                nombre: 'Valentina',
+                telefono: '117654321',
+                reparaciones: 5,
+                email: 'valentina@test.com'
+            },
+            {
+                nombre: 'Mateo',
+                telefono: '114321567',
+                reparaciones: 2,
+                email: 'mateo@test.com'
+            },
+            {
+                nombre: 'Camila',
+                telefono: '116789432',
+                reparaciones: 7,
+                email: 'camila@test.com'
+            },
+            {
+                nombre: 'Nicolas',
+                telefono: '113789456',
+                reparaciones: 1,
+                email: 'nicolas@test.com'
+            },
+            {
+                nombre: 'Sofia',
+                telefono: '115678934',
+                reparaciones: 4,
+                email: 'sofia@test.com'
+            },
+            {
+                nombre: 'Martin',
+                telefono: '112987654',
+                reparaciones: 3,
+                email: 'martin@test.com'
+            },
+            {
+                nombre: 'Agustina',
+                telefono: '116234789',
+                reparaciones: 2,
+                email: 'agustina@test.com'
+            },
+            {
+                nombre: 'Gonzalo',
+                telefono: '114567123',
+                reparaciones: 8,
+                email: 'gonzalo@test.com'
+            },
+            {
+                nombre: 'Florencia',
+                telefono: '117432567',
+                reparaciones: 3,
+                email: 'florencia@test.com'
+            },
+            {
+                nombre: 'Lucas',
+                telefono: '113214567',
+                reparaciones: 5,
+                email: 'lucas@test.com'
+            },
+            {
+                nombre: 'Micaela',
+                telefono: '116543872',
+                reparaciones: 1,
+                email: 'micaela@test.com'
+            },
+            {
+                nombre: 'Tomas',
+                telefono: '114876321',
+                reparaciones: 4,
+                email: 'tomas@test.com'
+            },
+            {
+                nombre: 'Julieta',
+                telefono: '115432678',
+                reparaciones: 6,
+                email: 'julieta@test.com'
+            },
+            {
+                nombre: 'Federico',
+                telefono: '112345987',
+                reparaciones: 2,
+                email: 'federico@test.com'
+            },
+            {
+                nombre: 'Carolina',
+                telefono: '117654892',
+                reparaciones: 3,
+                email: 'carolina@test.com'
+            }
+        ],
+
+        btnNewClient(){
+            this.newClient = true;
+            this.searchClient = false;
+            this.returnSearch = true;
+        },
+
+        btnReturn(){
+            this.newClient = false;
+            this.searchClient = true;
+            this.returnSearch = false;
+        },
+
+    }"
 >
     {{-- Backdrop con desenfoque --}}
     <div
@@ -92,79 +248,174 @@
                                 </svg>
                                 Cliente
                             </h4>
+                            <div>
+                                <button 
+                                    type="button"
+                                    @click="btnReturn()"
+                                    x-show="returnSearch"
+                                    class="h-6 rounded-md bg-primary/70 px-8 text-sm font-normal text-white transition-all hover:bg-primary-hover active:scale-[0.98] gap-2.5 cursor-pointer shrink-0"
+                                >
+                                    <- Regresar
+                                </button>
+                            </div>
                         </div>
+                        {{-- Seccion con el formulario para buscar un cliente que ya haya estado registrado --}}
+                        <div class="" x-show="searchClient">
 
-                        <div>
-                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Nombre y Apellido <span class="text-danger">*</span></label>
-                            <input
-                                type="text"
-                                name="nombre"
-                                value="{{ old('nombre') }}"
-                                placeholder="Nombre completo"
-                                required
-                                class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
-                            >
-                            @error('nombre')
-                                <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
+                            <div class="flex flex-col gap-2 py-2">
+                                <h3 class="text-xl text-center">¿Es un cliente ya registrado en tu negocio?</h3>
+                                {{-- Search icon --}}
+                                <div class="relative w-full lg:flex-1">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke-width="2.5"
+                                        stroke="currentColor"
+                                        class="absolute left-6 top-1/2 h-7 w-7 -translate-y-1/2 text-text-disabled"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"
+                                        />
+                                    </svg>
+                                    {{-- Buscador de clientes --}}
+                                    <input
+                                        id="search"
+                                        type="text"
+                                        name="search"
+                                        x-model="search"
+                                        @focus="showResult = true"
+                                        placeholder="Buscar cliente..."
+                                        class="h-16 w-full rounded-full border-0 bg-surface pl-20 pr-6 text-base font-semibold text-text-primary placeholder:text-text-disabled outline-none focus:ring-2 focus:ring-primary"
+                                    >
+                                </div>
+                                <div 
+                                    x-show="showResult && search.length > 0" 
+                                    x-cloak
+                                    class="top-full left-0 z-20 mt-1 w-full max-h-64 overflow-y-auto rounded-xl border py-2 border-white/10 bg-[#141c25] shadow-xl"
+                                >
+                                    <template
+                                        x-for="cliente in clientes.filter(cliente => 
+                                            cliente.nombre.toLowerCase().includes(search.toLowerCase())
+                                        )"
+                                        :key="cliente.nombre"
+                                    >
+                                        <div
+                                            @click="search = cliente.nombre; showResult = false;"
+                                            class="cursor-pointer px-4 rounded-xl"
+                                        >
+                                            <div class="bg-[#1f242d] hover:bg-gray-800 rounded-xl p-4 my-2 flex flex-col justify-center shadow-lg font-sans text-gray-200">
+                                                <p class="text-text-disabled">Cliente: <span class="text-text-primary" x-text="cliente.nombre"></span></p>
+                                                <p class="text-text-disabled">Telefono: <span class="text-text-primary" x-text="cliente.telefono"></span></p>
+                                                <p class="text-text-disabled">Email: <span class="text-text-primary" x-text="cliente.email"></span></p>
+                                                <p class="text-text-disabled">Reparaciones: <span class="text-emerald-500" x-text="cliente.reparaciones"></span></p>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <div
+                                        x-show="search.length > 0 &&
+                                            !clientes.some(cliente =>
+                                                cliente.nombre.toLowerCase().includes(search.toLowerCase())
+                                            )"
+                                        class="px-4 py-3 text-gray-400"
+                                    >
+                                        No se encontraron clientes.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-row items-center justify-center gap-2 py-4">
+                                <div class="border-b border-white/10 w-1/3"></div>
+                                <span class="text-white/10">o</span>
+                                <div class="border-b border-white/10 w-1/3"></div>
+                            </div>
+
+                            <div class="flex flex-col items-center py-2">
+                                <span>¿Es un cliente nuevo?</span>
+                                <button
+                                    type="button"
+                                    class="h-16 rounded-2xl bg-primary px-8 text-lg font-bold text-white transition-all hover:bg-primary-hover active:scale-[0.98] shadow-md gap-2.5 cursor-pointer shrink-0"
+                                    @click="btnNewClient()"
+                                >
+                                    Registrar nuevo cliente
+                                </button>
+                            </div>
                         </div>
+                        {{-- Seccion con el formulario para guardar un nuevo cliente sea el caso --}}
+                        <div class="flex flex-col gap-3" x-show="newClient">
+                            <div>
+                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Nombre y Apellido <span class="text-danger">*</span></label>
+                                <input
+                                    type="text"
+                                    name="nombre"
+                                    value="{{ old('nombre') }}"
+                                    placeholder="Nombre completo"
+                                    required
+                                    class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
+                                >
+                                @error('nombre')
+                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                        <div>
-                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Teléfono / Celular <span class="text-danger">*</span></label>
-                            <input
-                                type="text"
-                                name="telefono"
-                                value="{{ old('telefono') }}"
-                                placeholder="Ej: 11 2345-6789"
-                                required
-                                class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
-                            >
-                            @error('telefono')
-                                <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
-                        </div>
+                            <div>
+                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Teléfono / Celular <span class="text-danger">*</span></label>
+                                <input
+                                    type="text"
+                                    name="telefono"
+                                    value="{{ old('telefono') }}"
+                                    placeholder="Ej: 11 2345-6789"
+                                    required
+                                    class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
+                                >
+                                @error('telefono')
+                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                        <div>
-                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Email (Opcional)</label>
-                            <input
-                                type="email"
-                                name="email"
-                                value="{{ old('email') }}"
-                                placeholder="correo@ejemplo.com"
-                                class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
-                            >
-                            @error('email')
-                                <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
-                        </div>
+                            <div>
+                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Email (Opcional)</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value="{{ old('email') }}"
+                                    placeholder="correo@ejemplo.com"
+                                    class="h-11 w-full rounded-xl bg-surface px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
+                                >
+                                @error('email')
+                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                        <div>
-                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Falla reportada <span class="text-danger">*</span></label>
-                            <textarea
-                                name="falla_reportada"
-                                rows="2"
-                                placeholder="Detalle del problema reportado por el cliente"
-                                required
-                                class="w-full rounded-xl bg-[#1c2530] p-3 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner resize-none"
-                            >{{ old('falla_reporta/**/da') }}</textarea>
-                            @error('falla_reportada')
-                                <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
-                        </div>
+                            <div>
+                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Falla reportada <span class="text-danger">*</span></label>
+                                <textarea
+                                    name="falla_reportada"
+                                    rows="2"
+                                    placeholder="Detalle del problema reportado por el cliente"
+                                    required
+                                    class="w-full rounded-xl bg-surface p-3 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner resize-none"
+                                >{{ old('falla_reporta/**/da') }}</textarea>
+                                @error('falla_reportada')
+                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                        <div>
-                            <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Seña Inicial ($)</label>
-                            <input
-                                type="number"
-                                step="any"
-                                name="sena"
-                                value="{{ old('sena') }}"
-                                placeholder="0"
-                                class="h-11 w-full rounded-xl bg-[#1c2530] px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
-                            >
-                            @error('sena')
-                                <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
+                            <div>
+                                <label class="block text-xs font-bold text-white mb-1 uppercase tracking-wider">Seña Inicial ($)</label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    name="sena"
+                                    value="{{ old('sena') }}"
+                                    placeholder="0"
+                                    class="h-11 w-full rounded-xl bg-surface px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
+                                >
+                                @error('sena')
+                                    <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
 
                     </div>
