@@ -76,3 +76,5 @@ Route::get('/legales', function () {
 Route::get('/privacidad', function () {
     return view('legales.privacidad');
 })->name('privacidad');
+
+Route::get('/api/clientes', [ClientesController::class, 'search'])->middleware('auth')->name('clientes.search');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Clientes;
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Traits\FormateaFechaArgentina;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ClientesController extends Controller
@@ -193,5 +194,12 @@ class ClientesController extends Controller
                 'whatsapp_url' => $cliente->whatsapp_url,
             ],
         ]);
+    }
+    public function search(): JsonResponse
+    {
+        $data = [
+            'saludo' => 'hola'
+        ];
+        return response()->json($data);
     }
 }

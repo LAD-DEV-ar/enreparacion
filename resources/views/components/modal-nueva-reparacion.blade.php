@@ -23,6 +23,9 @@
         returnSearch: false,
 
         search: '',
+        nombre: '',
+        telefono: '',
+        email: '',
         showResult: false,
 
         clientes: [
@@ -170,7 +173,21 @@
             this.newClient = false;
             this.searchClient = true;
             this.returnSearch = false;
+            
+            this.nombre = '';
+            this.telefono = '';
+            this.email = '';
         },
+
+        selectClient(id){
+            this.newClient = true;
+            this.searchClient = false;
+            this.returnSearch = true;
+
+            this.nombre = id.nombre;
+            this.telefono = id.telefono;
+            this.email = id.email;
+        }
 
     }"
 >
@@ -303,7 +320,7 @@
                                         :key="cliente.nombre"
                                     >
                                         <div
-                                            @click="search = cliente.nombre; showResult = false;"
+                                            @click="selectClient(cliente); showResult = false;"
                                             class="cursor-pointer px-4 rounded-xl"
                                         >
                                             <div class="bg-[#1f242d] hover:bg-gray-800 rounded-xl p-4 my-2 flex flex-col justify-center shadow-lg font-sans text-gray-200">
@@ -349,6 +366,7 @@
                                 <input
                                     type="text"
                                     name="nombre"
+                                    x-model="nombre"
                                     value="{{ old('nombre') }}"
                                     placeholder="Nombre completo"
                                     required
@@ -364,6 +382,7 @@
                                 <input
                                     type="text"
                                     name="telefono"
+                                    x-model="telefono"
                                     value="{{ old('telefono') }}"
                                     placeholder="Ej: 11 2345-6789"
                                     required
@@ -379,6 +398,7 @@
                                 <input
                                     type="email"
                                     name="email"
+                                    x-model="email"
                                     value="{{ old('email') }}"
                                     placeholder="correo@ejemplo.com"
                                     class="h-11 w-full rounded-xl bg-surface px-4 text-sm font-semibold text-white placeholder:text-text-disabled outline-none border border-transparent focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all shadow-inner"
