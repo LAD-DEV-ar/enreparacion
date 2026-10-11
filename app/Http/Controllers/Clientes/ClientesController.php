@@ -195,11 +195,26 @@ class ClientesController extends Controller
             ],
         ]);
     }
-    public function search(): JsonResponse
+    public function search(Request $request): JsonResponse
     {
-        $data = [
-            'saludo' => 'hola'
-        ];
-        return response()->json($data);
+        $datos = $request->validate([
+            'buscar' => ['required', 'string', 'max:100'],
+        ]);
+
+        $buscar = $datos['buscar'];
+
+        if(!$request->user()->negocio){
+            return response()->json(['error' => 'No tienes un negocio vinculado a tu cuenta para realizar esta petición.'], 422);
+        }
+
+        $clientes = $request->user()
+            ->negocio
+            ->clientes()
+            ->where('nombre', 'like', "%{$buscar}%")
+            ->limit(20)
+            ->get();
+
+
+        return response()->json($clientes);
     }
 }

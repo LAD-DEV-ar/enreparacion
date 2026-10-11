@@ -34,6 +34,12 @@ class NegocioSeeder extends Seeder
         $this->call([PlanSeeder::class]);
         $adminFijo = User::firstWhere('email', 'test_user_2887582496948464712@testuser.com');
 
+        if ($adminFijo) {
+            // Sembrar el negocio principal con datos de prueba
+            $this->sembrarNegocio($adminFijo->negocio, $adminFijo);
+            $this->command->info('✔  Se sembro con informacion el negocio que ya existia.');
+        }
+
         if (! $adminFijo) {
 
             $negocioPrincipal = Negocio::factory()->conSuscripcion()->create([
@@ -52,10 +58,10 @@ class NegocioSeeder extends Seeder
                 ]);
             $this->command->info("✔  Negocio principal: {$negocioPrincipal->nombre} (ID {$negocioPrincipal->id})");
             $this->command->info("✔  Admin fijo: {$adminFijo->email} / contraseña: password");
-
-            // Sembrar el negocio principal con datos de prueba
             $this->sembrarNegocio($negocioPrincipal, $adminFijo);
+            $this->command->info('✔  Se sembro con informacion el negocio que se acaba de crear.');
         }
+
 
         // ─── Negocios adicionales totalmente aleatorios ────────────────────────────
         for ($i = 0; $i < self::NEGOCIOS - 1; $i++) {

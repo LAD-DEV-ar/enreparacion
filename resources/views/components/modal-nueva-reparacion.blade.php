@@ -23,145 +23,14 @@
         returnSearch: false,
 
         search: '',
+        searchDebounce: false,
         nombre: '',
         telefono: '',
         email: '',
         showResult: false,
 
-        clientes: [
-            {
-                nombre: 'Elias',
-                telefono: '115437832',
-                reparaciones: 2,
-                email: 'test@test.com'
-            },
-            {
-                nombre: 'Eliana',
-                telefono: '113246612',
-                reparaciones: 3,
-                email: 'test23@test21.com'
-            },
-            {
-                nombre: 'Carlos',
-                telefono: '116784523',
-                reparaciones: 4,
-                email: 'carlos@test.com'
-            },
-            {
-                nombre: 'Facundo',
-                telefono: '114563782',
-                reparaciones: 1,
-                email: 'facundo@test.com'
-            },
-            {
-                nombre: 'Marcos',
-                telefono: '112345678',
-                reparaciones: 6,
-                email: 'marcos@test.com'
-            },
-            {
-                nombre: 'Luciana',
-                telefono: '116543219',
-                reparaciones: 2,
-                email: 'luciana@test.com'
-            },
-            {
-                nombre: 'Santiago',
-                telefono: '113456789',
-                reparaciones: 3,
-                email: 'santiago@test.com'
-            },
-            {
-                nombre: 'Valentina',
-                telefono: '117654321',
-                reparaciones: 5,
-                email: 'valentina@test.com'
-            },
-            {
-                nombre: 'Mateo',
-                telefono: '114321567',
-                reparaciones: 2,
-                email: 'mateo@test.com'
-            },
-            {
-                nombre: 'Camila',
-                telefono: '116789432',
-                reparaciones: 7,
-                email: 'camila@test.com'
-            },
-            {
-                nombre: 'Nicolas',
-                telefono: '113789456',
-                reparaciones: 1,
-                email: 'nicolas@test.com'
-            },
-            {
-                nombre: 'Sofia',
-                telefono: '115678934',
-                reparaciones: 4,
-                email: 'sofia@test.com'
-            },
-            {
-                nombre: 'Martin',
-                telefono: '112987654',
-                reparaciones: 3,
-                email: 'martin@test.com'
-            },
-            {
-                nombre: 'Agustina',
-                telefono: '116234789',
-                reparaciones: 2,
-                email: 'agustina@test.com'
-            },
-            {
-                nombre: 'Gonzalo',
-                telefono: '114567123',
-                reparaciones: 8,
-                email: 'gonzalo@test.com'
-            },
-            {
-                nombre: 'Florencia',
-                telefono: '117432567',
-                reparaciones: 3,
-                email: 'florencia@test.com'
-            },
-            {
-                nombre: 'Lucas',
-                telefono: '113214567',
-                reparaciones: 5,
-                email: 'lucas@test.com'
-            },
-            {
-                nombre: 'Micaela',
-                telefono: '116543872',
-                reparaciones: 1,
-                email: 'micaela@test.com'
-            },
-            {
-                nombre: 'Tomas',
-                telefono: '114876321',
-                reparaciones: 4,
-                email: 'tomas@test.com'
-            },
-            {
-                nombre: 'Julieta',
-                telefono: '115432678',
-                reparaciones: 6,
-                email: 'julieta@test.com'
-            },
-            {
-                nombre: 'Federico',
-                telefono: '112345987',
-                reparaciones: 2,
-                email: 'federico@test.com'
-            },
-            {
-                nombre: 'Carolina',
-                telefono: '117654892',
-                reparaciones: 3,
-                email: 'carolina@test.com'
-            }
-        ],
+        clientes: [],
+
 
         btnNewClient(){
             this.newClient = true;
@@ -187,7 +56,35 @@
             this.nombre = id.nombre;
             this.telefono = id.telefono;
             this.email = id.email;
-        }
+        },
+
+        async buscarClientes(){
+            if (this.search.length < 1) {
+                this.clientes = [];
+                this.searchDebounce = false;
+                return;
+            }
+
+            try {
+                const parametros = new URLSearchParams({
+                    buscar: this.search
+                });
+
+                const respuesta = await fetch(`/api/clientes?${parametros}`);
+
+                if (!respuesta.ok){
+                    throw new Error('Error de la aplicacion');
+                }
+
+                this.clientes = await respuesta.json();
+                this.searchDebounce = false;
+
+            } catch (error){
+                console.log(error);
+                this.clientes = [];
+                this.searchDebounce = false;
+            }
+        },
 
     }"
 >
@@ -272,7 +169,7 @@
                                     x-show="returnSearch"
                                     class="h-6 rounded-md bg-primary/70 px-8 text-sm font-normal text-white transition-all hover:bg-primary-hover active:scale-[0.98] gap-2.5 cursor-pointer shrink-0"
                                 >
-                                    <- Regresar
+                                    < Regresar
                                 </button>
                             </div>
                         </div>
@@ -303,6 +200,8 @@
                                         type="text"
                                         name="search"
                                         x-model="search"
+                                        @input.debounce.300ms="buscarClientes()"
+                                        @input="searchDebounce = true"
                                         @focus="showResult = true"
                                         placeholder="Buscar cliente..."
                                         class="h-16 w-full rounded-full border-0 bg-surface pl-20 pr-6 text-base font-semibold text-text-primary placeholder:text-text-disabled outline-none focus:ring-2 focus:ring-primary"
@@ -317,7 +216,7 @@
                                         x-for="cliente in clientes.filter(cliente => 
                                             cliente.nombre.toLowerCase().includes(search.toLowerCase())
                                         )"
-                                        :key="cliente.nombre"
+                                        :key="cliente.id"
                                     >
                                         <div
                                             @click="selectClient(cliente); showResult = false;"
@@ -331,11 +230,18 @@
                                             </div>
                                         </div>
                                     </template>
+                                    <div x-show="searchDebounce" class="p-2">
+                                        <div x-show="searchDebounce"
+                                        x-cloak
+                                        class="w-8 h-8 rounded-full border-2 border-gray-300 border-t-blue-500 animate-spin m-auto"
+                                        >
+                                        </div>
+                                    </div>
                                     <div
                                         x-show="search.length > 0 &&
                                             !clientes.some(cliente =>
                                                 cliente.nombre.toLowerCase().includes(search.toLowerCase())
-                                            )"
+                                            ) && !searchDebounce"
                                         class="px-4 py-3 text-gray-400"
                                     >
                                         No se encontraron clientes.
