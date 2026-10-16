@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 #[Signature('users:delete-unverified-users')]
 #[Description('Elimina usuarios que no verificaron su email dentro del plazo establecido')]
@@ -24,6 +25,7 @@ class DeleteUnverifiedUsers extends Command
             ->delete();
 
         $this->info("Usuarios eliminados: {$usuariosEliminados}");
+        Log::info("Usuarios eliminados: {$usuariosEliminados}");
 
         return self::SUCCESS;
     }
